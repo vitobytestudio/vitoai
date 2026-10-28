@@ -57,6 +57,16 @@ never repaints — it stays blank. Two defences:
    explicit `unicode-range`, so the Arabic and Latin subsets of Cairo coexist
    instead of shadowing each other.
 
+## First run after a sandbox reset
+
+```bash
+./setup.sh && source .toolenv
+```
+
+The repo always survives; the toolchain never does. `setup.sh` restores
+dependencies, ffmpeg, headless Chromium, the audio palette and writes
+`.toolenv` (the single source of truth for binary paths).
+
 ## Delivery
 
 **Every video ships through GitHub raw — no other path reaches the user from

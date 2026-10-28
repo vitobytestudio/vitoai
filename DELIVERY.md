@@ -44,6 +44,34 @@ https://github.com/vitobytestudio/vitoai/raw/arena/c36750ba-vitoai/deliverables/
 GitHub يرفض أي ملف > 100 MB. كل الرندرات الحالية تحت 50 MB و آمنة.
 إن تجاوز فيديو 100 MB مستقبلاً: يُقسَّم بـ`ffmpeg -f segment` أو تُرفع نسخة CRF أعلى.
 
+## ⚙️ عند إعادة تشغيل البيئة
+
+الأدوات تضيع، الأكواد والفيديوهات لا. **أمر واحد يستعيد كل شيء:**
+
+```bash
+./setup.sh          # ~60 ثانية
+source .toolenv     # يضبط ffmpeg + chromium + المكتبات
+```
+
+ثم أي أمر رندر يعمل. لا حاجة لأي خطوة يدوية أخرى.
+
+### ما يضيع وما يبقى
+
+| يضيع | يبقى |
+|---|---|
+| `node_modules/` | `src/` كل الأكواد |
+| Chromium + ffmpeg | `scripts/` |
+| `out/` (نسخ الرندر) | `deliverables/` (الفيديوهات) |
+| | **روابط GitHub** |
+
+### الدروس المثبّتة في الكود
+
+| العطل | الحل الدائم |
+|---|---|
+| `npm install --no-save` يحذف الأدوات الأخرى | الأدوات في `devDependencies` |
+| مسار Chromium مثبّت في `remotion.config.ts` | يُقرأ من `.toolenv` |
+| انقطاع TLS | `NODE_EXTRA_CA_CERTS` داخل `setup.sh` |
+
 ## سكربت التسليم الآلي
 
 ```bash
