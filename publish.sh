@@ -39,7 +39,7 @@ mkdir -p deliverables
 
 step "1/5 · verify master"
 "$FFMPEG" -v error -i "$MASTER_SRC" -f null - && ok "decodes cleanly"
-SIZE=$(du -m "$MASTER_SRC" | cut -f1)
+SIZE=$(($(stat -c%s "$MASTER_SRC") / 1048576))
 [[ "$SIZE" -lt 95 ]] || { echo "master is ${SIZE}MB — GitHub rejects >100MB"; exit 1; }
 ok "${SIZE}MB (under the 100MB limit)"
 
@@ -56,11 +56,20 @@ fi
 
 step "3/5 · stage the deliverables"
 cp "$MASTER_SRC" "$MASTER_DST"
-cp "$LITE_SRC" "$LITE_DST"
-ls -lh "$MASTER_DST" "$LITE_DST" | awk '{print "  "$9"  "$5}'
+ls -lh "$MASTER_DST" | awk '{print "  "$9"  "$5}'
+
+# a lite cut that is not actually lighter is a second 8MB download for nothing
+STAGE_LITE=1
+if cmp -s "$MASTER_SRC" "$LITE_SRC" || [[ $(stat -c%s "$LITE_SRC") -ge $(stat -c%s "$MASTER_SRC") ]]; then
+  STAGE_LITE=0
+  ok "single file — the master is already phone-sized"
+else
+  cp "$LITE_SRC" "$LITE_DST"
+  ls -lh "$LITE_DST" | awk '{print "  "$9"  "$5}'
+fi
 
 step "4/5 · publish"
-git add -f "$MASTER_DST" "$LITE_DST"
+if [[ $STAGE_LITE -eq 1 ]]; then git add -f "$MASTER_DST" "$LITE_DST"; else git add -f "$MASTER_DST"; fi
 MSG="${2:-deliver: $SLUG $(date -u +%Y-%m-%dT%H:%MZ)}"
 if git diff --cached --quiet; then ok "nothing changed"; else
   git -c user.name="VitoAI Agent" -c user.email="agent@vitoai.local" commit -q -m "$MSG"
@@ -69,11 +78,13 @@ if git diff --cached --quiet; then ok "nothing changed"; else
 fi
 
 step "5/5 · download links"
-LITE_MB=$(du -m "$LITE_SRC" | cut -f1)
+LITE_MB=$(($(stat -c%s "$LITE_SRC") / 1048576))
 echo
 echo "  MASTER (${SIZE}MB)"
 echo "  https://github.com/${REPO}/raw/${BRANCH}/${MASTER_DST}"
+if [[ $STAGE_LITE -eq 1 ]]; then
 echo
 echo "  LITE (${LITE_MB}MB)"
 echo "  https://github.com/${REPO}/raw/${BRANCH}/${LITE_DST}"
+fi
 echo

@@ -39,10 +39,10 @@ step "1/4 · preflight"
 
 step "2/4 · render ($COMP)"
 mkdir -p out
-/usr/bin/time -f "  render wall: %es" npx remotion render src/index.ts "$COMP" "out/${SLUG}_master.mp4" \
+RS=$(date +%s); npx remotion render src/index.ts "$COMP" "out/${SLUG}_master.mp4" \
   --concurrency=2 --pixel-format=yuv420p --codec=h264 --crf=18 \
   --x264-preset=veryfast --color-space=bt709 \
-  --audio-codec=aac --audio-bitrate=192k 2>&1 | tail -3
+  --audio-codec=aac --audio-bitrate=192k 2>&1 | tail -1; echo "  render wall: $(( $(date +%s) - RS ))s"
 ok "master: $(du -h "out/${SLUG}_master.mp4" | cut -f1)"
 
 step "3/4 · mobile cut"
