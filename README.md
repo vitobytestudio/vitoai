@@ -57,6 +57,19 @@ never repaints — it stays blank. Two defences:
    explicit `unicode-range`, so the Arabic and Latin subsets of Cairo coexist
    instead of shadowing each other.
 
+## Delivery
+
+**Every video ships through GitHub raw — no other path reaches the user from
+this sandbox.** See [DELIVERY.md](DELIVERY.md). One command:
+
+```bash
+./publish.sh
+```
+
+```
+https://github.com/vitobytestudio/vitoai/raw/arena/c36750ba-vitoai/deliverables/vitoai-motion-master-1080x1920.mp4
+```
+
 ## Build
 
 ```bash
