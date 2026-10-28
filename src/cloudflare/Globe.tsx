@@ -121,6 +121,16 @@ export type GlobeProps = {
   lights?: number;
   sweep?: number;
   intensity?: number;
+  /** brand colours — defaults keep the Cloudflare render byte-identical */
+  accent?: string;
+  accentHot?: string;
+  accentDeep?: string;
+  gridColor?: string;
+  haloRGB?: string;
+  /** "r,g,b" of the lit hemisphere — the sphere's body fill */
+  bodyRGB?: string;
+  /** "r,g,b" for the dark side */
+  shadeRGB?: string;
 };
 
 /**
@@ -149,6 +159,13 @@ export const Globe: React.FC<GlobeProps> = ({
   lights = 0,
   sweep = 1,
   intensity = 1,
+  accent = "#F6821F",
+  accentHot = "#FFA24B",
+  accentDeep = "#B4571A",
+  gridColor = "#C4703A",
+  haloRGB = "246,130,31",
+  bodyRGB = "96,42,12",
+  shadeRGB = "12,6,3",
 }) => {
   const ref = useRef<HTMLCanvasElement>(null);
 
@@ -159,6 +176,12 @@ export const Globe: React.FC<GlobeProps> = ({
 
     const { nodes, edges } = buildGeo();
     const sc = buildScatter();
+    const hexToRgb = (h: string) => {
+      const m = h.replace("#", "");
+      return `${parseInt(m.slice(0, 2), 16)},${parseInt(m.slice(2, 4), 16)},${parseInt(m.slice(4, 6), 16)}`;
+    };
+    const accentRgba = `rgba(${hexToRgb(accent)},1)`;
+    const accentHotRgba = `rgba(${hexToRgb(accentHot)},1)`;
     ctx.setTransform(CANVAS_SCALE, 0, 0, CANVAS_SCALE, 0, 0);
     const cx = WIDTH / 2;
     const focal = FX * zoom;
@@ -177,9 +200,9 @@ export const Globe: React.FC<GlobeProps> = ({
 
     /* ------------------------------ atmosphere ----------------------------- */
     const halo = ctx.createRadialGradient(cx, cy, rScreen * 0.86, cx, cy, rScreen * 1.55);
-    halo.addColorStop(0, "rgba(246,130,31,0.20)");
-    halo.addColorStop(0.42, "rgba(226,108,26,0.085)");
-    halo.addColorStop(1, "rgba(246,130,31,0)");
+    halo.addColorStop(0, `rgba(${haloRGB},0.20)`);
+    halo.addColorStop(0.42, `rgba(${haloRGB},0.085)`);
+    halo.addColorStop(1, `rgba(${haloRGB},0)`);
     ctx.globalAlpha = fadeAll;
     ctx.fillStyle = halo;
     ctx.beginPath();
@@ -189,10 +212,10 @@ export const Globe: React.FC<GlobeProps> = ({
     /* -------------------------------- body --------------------------------- */
     // off-centre light source (upper left) makes the sphere read as a volume
     const body = ctx.createRadialGradient(cx - rScreen * 0.42, cy - rScreen * 0.46, rScreen * 0.05, cx, cy, rScreen * 1.02);
-    body.addColorStop(0, "rgba(96,42,12,0.62)");
-    body.addColorStop(0.46, "rgba(38,18,8,0.72)");
-    body.addColorStop(0.88, "rgba(14,7,4,0.82)");
-    body.addColorStop(1, "rgba(8,4,2,0.86)");
+    body.addColorStop(0, `rgba(${bodyRGB},0.58)`);
+    body.addColorStop(0.46, `rgba(${shadeRGB},0.72)`);
+    body.addColorStop(0.88, `rgba(${shadeRGB},0.82)`);
+    body.addColorStop(1, `rgba(${shadeRGB},0.86)`);
     ctx.fillStyle = body;
     ctx.beginPath();
     ctx.arc(cx, cy, rScreen, 0, TAU);
@@ -232,7 +255,7 @@ export const Globe: React.FC<GlobeProps> = ({
       }
     }
     const GALPHA = [0.05, 0.11, 0.20];
-    ctx.strokeStyle = "#C4703A";
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1.15;
     for (let l = 0; l < 3; l++) {
       if (!gbat[l]) continue;
@@ -281,14 +304,14 @@ export const Globe: React.FC<GlobeProps> = ({
       const path = buckets[b];
       if (!path) continue;
       ctx.globalAlpha = fadeAll * (0.14 + b * 0.20);
-      ctx.strokeStyle = b >= 4 ? "#FFC48A" : b >= 3 ? "#FFA24B" : "#B4571A";
+      ctx.strokeStyle = b >= 4 ? accentHot : b >= 3 ? accent : accentDeep;
       ctx.lineWidth = b >= 4 ? 1.5 : b >= 3 ? 1.15 : 0.9;
       ctx.stroke(path);
     }
 
     /* -------------------------------- nodes -------------------------------- */
-    const spr = tintedSprite("rgba(246,130,31,1)", 128);
-    const sprHot = tintedSprite("rgba(255,169,90,1)", 128);
+    const spr = tintedSprite(accentRgba, 128);
+    const sprHot = tintedSprite(accentHotRgba, 128);
     const sprRed = tintedSprite("rgba(255,66,51,1)", 128);
 
     for (let i = 0; i < nodes.length; i++) {
@@ -296,7 +319,7 @@ export const Globe: React.FC<GlobeProps> = ({
       if (!q.visible || q.s < 0.10) continue;
       const r = 0.9 + Math.min(1.5, q.s * 1.3);
       ctx.globalAlpha = fadeAll * clamp(q.s * 1.25);
-      ctx.fillStyle = q.z > 0.2 ? "#FFD2A0" : "#F6821F";
+      ctx.fillStyle = q.z > 0.2 ? accentHot : accent;
       ctx.fillRect(q.x - r / 2, q.y - r / 2, r, r);
       // glow only on the brightest sliver — this is what keeps it crisp
       if (q.s > 1.05) blitTinted(ctx, spr, q.x, q.y, r * 6, fadeAll * (q.s - 1.0) * 0.5);
@@ -364,7 +387,7 @@ export const Globe: React.FC<GlobeProps> = ({
         if (prev && s > drawn - tail) {
           const edge = (s - (drawn - tail)) / tail;
           ctx.globalAlpha = Math.min(1, Math.pow(edge, 1.6) * headFade * opacity);
-          ctx.strokeStyle = "#FFD9B0";
+          ctx.strokeStyle = accentHot;
           ctx.lineWidth = (arc.width ?? 2.4) * (0.4 + edge * 0.85);
           ctx.beginPath();
           ctx.moveTo(prev.x, prev.y);
@@ -390,7 +413,7 @@ export const Globe: React.FC<GlobeProps> = ({
         const grow = 1 + ph * 0.28;
         const a = (1 - ph) * 0.5 * opacity;
         if (a < 0.012) continue;
-        ctx.strokeStyle = k === 0 ? "#FFD9A8" : CF.orange;
+        ctx.strokeStyle = k === 0 ? accentHot : accent;
         ctx.lineWidth = 1.4;
         ctx.globalAlpha = a;
         for (let la = -60; la <= 60; la += 30) {
@@ -445,7 +468,7 @@ export const Globe: React.FC<GlobeProps> = ({
     /* ------------------------------ rim light ------------------------------ */
     if (collapse < 0.55) {
       ctx.globalAlpha = 0.5 * fadeAll * (1 - collapse);
-      ctx.strokeStyle = "rgba(255,178,110,1)";
+      ctx.strokeStyle = accentHot;
       ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.arc(cx, cy, Math.max(1, rScreen - 1), 0, TAU);
@@ -463,7 +486,7 @@ export const Globe: React.FC<GlobeProps> = ({
     }
 
     ctx.globalCompositeOperation = "source-over";
-  }, [frame, assemble, spin, tilt, zoom, cy, opacity, arcs, impacts, shield, collapse, lights, sweep, intensity]);
+  }, [frame, assemble, spin, tilt, zoom, cy, opacity, arcs, impacts, shield, collapse, lights, sweep, intensity, accent, accentHot, accentDeep, gridColor, haloRGB, bodyRGB, shadeRGB]);
 
   return (
     <AbsoluteFill style={{ opacity }}>
