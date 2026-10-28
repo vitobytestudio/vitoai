@@ -58,7 +58,7 @@ else bad "missing $AUDIO"; fi
 if [[ -f src/nexus3d/Reel.tsx ]]; then
   MIX=$(python3 scripts/check_mix.py 2>/dev/null | grep -oE "\\([0-9]+%\\)" | tr -d '()')
   if [[ "${MIX%\%}" -gt 34 ]]; then
-    printf "  \033[0;33m▲\033[0m 3D mix ${MIX} — over the one-third ceiling (DESIGN.md)\n"
+    printf "  \033[0;33m!\033[0m %s\n" "3D mix ${MIX} — over the one-third ceiling (see DESIGN.md)"
     [[ "${STRICT_MIX:-0}" == "1" ]] && FAIL=1
   else ok "3D mix ${MIX}"; fi
 fi
