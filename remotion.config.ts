@@ -17,5 +17,5 @@ Config.setConcurrency(Number(process.env.REMOTION_CONCURRENCY ?? 1));
 Config.setChromiumOpenGlRenderer("swangle");
 
 Config.setVideoImageFormat("jpeg");
-Config.setJpegQuality(95);
+Config.setJpegQuality(88);
 Config.setOverwriteOutput(true);

@@ -57,6 +57,25 @@ never repaints — it stays blank. Two defences:
    explicit `unicode-range`, so the Arabic and Latin subsets of Cairo coexist
    instead of shadowing each other.
 
+## One command per video
+
+```bash
+./make.sh <slug> 30      # 30fps — the fast path (default)
+./make.sh <slug> 60      # 60fps — reference quality
+```
+
+preflight (3s) → render → mobile cut → publish → links printed.
+The content lives in `motion.config.ts`; the engine is fixed.
+Every known trap is in `PITFALLS.md` and blocks the build in preflight.
+
+Measured on this 2-vCPU box: **`0.069s × frames + 23s`**.
+
+| Length @30fps | Total |
+|---|---|
+| 10s | ≈ 40s |
+| 15s | ≈ 48s |
+| 23s | ≈ 64s |
+
 ## First run after a sandbox reset
 
 ```bash
