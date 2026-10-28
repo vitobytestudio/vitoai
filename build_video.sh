@@ -15,11 +15,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+# restore the toolchain automatically if a sandbox reset wiped it
+# shellcheck source=/dev/null
+source "$ROOT/ensure_tools.sh"
+
 # --- sandbox specifics -------------------------------------------------------
-export LD_LIBRARY_PATH="/home/user/chromelibs:/home/user/chromelibs/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-export FONTCONFIG_PATH="/home/user/chromelibs"
-CHROME_BIN="/home/user/bin/chromium"
-FFMPEG="${FFMPEG:-/home/user/probe/node_modules/@ffmpeg-installer/linux-x64/ffmpeg}"
+FFMPEG="${FFMPEG:?setup failed — run ./setup.sh}"
 PY="${PY:-python3}"
 
 SKIP_RENDER=0

@@ -6,6 +6,8 @@
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
+# shellcheck source=/dev/null
+source ./ensure_tools.sh
 
 BRANCH="arena/c36750ba-vitoai"
 REPO="vitobytestudio/vitoai"
@@ -13,7 +15,7 @@ MASTER_SRC="out/master_video.mp4"
 LITE_SRC="out/vitoai_motion_1080p.mp4"
 MASTER_DST="deliverables/vitoai-motion-master-1080x1920.mp4"
 LITE_DST="deliverables/vitoai-motion-1080x1920.mp4"
-FFMPEG="${FFMPEG:-/home/user/probe/node_modules/@ffmpeg-installer/linux-x64/ffmpeg}"
+FFMPEG="${FFMPEG:?run ./setup.sh}"
 
 step() { printf "\n\033[1;35m▸ %s\033[0m\n" "$1"; }
 ok()   { printf "  \033[0;32m✓\033[0m %s\n" "$1"; }
