@@ -57,6 +57,12 @@ never repaints — it stays blank. Two defences:
    explicit `unicode-range`, so the Arabic and Latin subsets of Cairo coexist
    instead of shadowing each other.
 
+## Before you add 3D
+
+`DESIGN.md` is the rule: 3D is for ideas that are genuinely spatial, and no more
+than a third of the beats. `python3 scripts/check_mix.py` audits a composition
+and fails if the mix is over.
+
 ## One command per video
 
 ```bash
