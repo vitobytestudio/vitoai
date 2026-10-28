@@ -71,9 +71,9 @@ const Whip: React.FC<{ f: number; children: React.ReactNode }> = ({ f, children 
   return (
     <AbsoluteFill
       style={{
-        transform: `translateX(${dir * w * 140}px) scale(${1 + w * 0.16})`,
-        filter: `blur(${(w * 7).toFixed(2)}px)`,
-        opacity: 1 - w * 0.25,
+        transform: `translateX(${dir * w * 74}px) scale(${1 + w * 0.07})`,
+        filter: `blur(${(w * 3.4).toFixed(2)}px)`,
+        opacity: 1 - w * 0.14,
       }}
     >
       {children}
@@ -126,7 +126,14 @@ export const Reel: React.FC = () => {
       {/* single deep-field gradient — everything sits inside this light */}
       <AbsoluteFill
         style={{
-          background: `radial-gradient(ellipse 68% 46% at 50% 44%, rgba(${threat > 0.3 ? "255,40,80" : "0,224,138"},0.13) 0%, rgba(43,184,255,0.05) 40%, rgba(0,0,0,0) 74%)`,
+          background: `radial-gradient(ellipse 62% 42% at 50% 40%, rgba(${threat > 0.3 ? "255,40,80" : "0,224,138"},0.12) 0%, rgba(0,0,0,0) 70%)`,
+        }}
+      />
+      {/* counter-light: a cool blue from below frames the green without noise */}
+      <AbsoluteFill
+        style={{
+          background: "radial-gradient(ellipse 78% 46% at 50% 96%, rgba(43,184,255,0.13) 0%, rgba(10,70,200,0.05) 46%, rgba(0,0,0,0) 76%)",
+          opacity: threat > 0.3 ? 0.25 : 1,
         }}
       />
 
@@ -137,7 +144,7 @@ export const Reel: React.FC = () => {
           speed={warpSpeed}
           tail={130 + warpSpeed * 2.4}
           threat={threat}
-          opacity={inB ? 0.55 : inD ? 0.4 : inE ? 0.45 : inF ? 0.5 : inI ? 0.7 : 0.85}
+          opacity={inB ? 0.22 : inD ? 0.16 : inE ? 0.2 : inF ? 0.24 : inI ? 0.3 : 0.5}
         />
       </Whip>
 
@@ -177,19 +184,6 @@ export const Reel: React.FC = () => {
               }}
             />
           </AbsoluteFill>
-          {/* tactical readouts either side of the mark */}
-          <div style={{ position: "absolute", left: 70, top: 470, opacity: ramp(f, 104, 128) }}>
-            <Mono size={12} color={NX.dim}>
-              vector
-            </Mono>
-            <div style={{ fontFamily: T.display, fontSize: 40, color: NX.white, letterSpacing: "-0.04em" }}>190</div>
-          </div>
-          <div style={{ position: "absolute", right: 70, top: 470, textAlign: "right", opacity: ramp(f, 112, 136) }}>
-            <Mono size={12} color={NX.dim}>
-              agents
-            </Mono>
-            <div style={{ fontFamily: T.display, fontSize: 40, color: NX.white, letterSpacing: "-0.04em" }}>1200</div>
-          </div>
         </Whip>
       ) : null}
 
@@ -339,7 +333,7 @@ export const Reel: React.FC = () => {
       {inF ? (
         <Whip f={f}>
           <Swarm frame={f} gather={1} spin={(f - 528) * 0.012} scale={1.2} threat={threat} opacity={0.9} />
-          <Breach frame={f} power={threat * (0.7 + 0.3 * Math.sin(f * 0.9))} />
+          <Breach frame={f} power={threat * 0.35} />
           <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
             <Mono size={20} color={NX.red} tracking="0.5em" style={{ opacity: ramp(f, 540, 556) }}>
               intrusion detected
@@ -446,7 +440,6 @@ export const Reel: React.FC = () => {
       <Hud
         frame={f}
         mode={inF ? "threat" : inI ? "resolve" : "default"}
-        ticker={TICKER}
         rightLabel={inF ? "breach" : inG ? "restoring" : inI ? "online" : "secure"}
         code={inF ? "NX/06" : inI ? "NX/09" : "NX/01"}
         opacity={inA ? ramp(f, 8, 30) * 0.85 : 0.85}
@@ -457,13 +450,13 @@ export const Reel: React.FC = () => {
         frame={f}
         flash={flash}
         flashRGB={inF ? "255,80,110" : "210,255,235"}
-        vignette={0.92}
-        grain={0.09}
-        halo={inA ? 0.4 : inI ? 0.55 : 0.22}
+        vignette={0.72}
+        grain={0.028}
+        halo={inA ? 0.16 : inI ? 0.3 : 0.10}
         haloRGB={inF ? "255,60,90" : "92,255,184"}
         lightX={540}
         lightY={inI ? 700 : 840}
-        smear={whipAt(f) * 0.9}
+        smear={0}
       />
 
       <AbsoluteFill style={{ background: "#000", opacity: ramp(f, 1052, 1080) }} />

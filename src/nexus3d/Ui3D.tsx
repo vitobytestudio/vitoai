@@ -164,6 +164,11 @@ const mixHex = (a: string, b: string, t: number) => {
 
 /* ================================ CARDS ================================= */
 
+const toRgb = (hex: string) => {
+  const h = hex.replace("#", "");
+  return `${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)}`;
+};
+
 export const Card3D: React.FC<{
   w: number;
   h: number;
@@ -179,9 +184,11 @@ export const Card3D: React.FC<{
       width: w,
       height: h,
       boxSizing: "border-box",
+      boxShadow: "0 24px 60px -30px rgba(0,0,0,0.9)",
+      ["--accentRgb" as string]: toRgb(accent),
       padding: `${h * 0.09}px ${w * 0.08}px`,
-      background: "linear-gradient(150deg, rgba(10,32,38,0.82), rgba(4,14,18,0.72))",
-      border: `1px solid rgba(255,255,255,${0.06 + lit * 0.1})`,
+      background: "linear-gradient(150deg, rgba(9,30,36,0.93), rgba(3,11,15,0.88))",
+      border: `1px solid rgba(${toRgb(accent)},${0.20 + lit * 0.34})`,
       borderRadius: 3,
       position: "relative",
       overflow: "hidden",
@@ -209,7 +216,7 @@ export const Card3D: React.FC<{
       <div
         style={{
           fontFamily: T.display,
-          fontSize: h * 0.30,
+          fontSize: h * 0.31,
           fontWeight: 600,
           letterSpacing: "-0.04em",
           lineHeight: 0.9,

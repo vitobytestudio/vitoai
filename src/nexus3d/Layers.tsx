@@ -84,8 +84,8 @@ export const Warp: React.FC<WarpProps> = ({
         if (fade <= 0.01) continue;
 
         const near = Math.min(1, 2200 / zA);
-        const alpha = fade * near * (pass === 0 ? 0.055 : 0.42) * opacity;
-        if (alpha < 0.05) continue;
+        const alpha = fade * near * (pass === 0 ? 0.03 : 0.26) * opacity;
+        if (alpha < 0.08) continue;
 
         const hot = s.hue > 0.72;
         const col = threat > 0.4 ? RED : hot ? GREEN_HOT : s.hue > 0.34 ? GREEN : BLUE;
@@ -205,9 +205,9 @@ export const PanelWall: React.FC<WallProps> = ({ frame, speed = 34, opacity = 1 
       ctx.moveTo(corners[0].x, corners[0].y);
       for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
       ctx.closePath();
-      ctx.fillStyle = rgba(6, 20, 26, 0.34 * depthFade);
+      ctx.fillStyle = rgba(6, 20, 26, 0.28 * depthFade);
       ctx.fill();
-      ctx.strokeStyle = rgba(GREEN[0], GREEN[1], GREEN[2], 0.34 * a);
+      ctx.strokeStyle = rgba(GREEN[0], GREEN[1], GREEN[2], 0.20 * a);
       ctx.lineWidth = 1;
       ctx.stroke();
 
@@ -355,7 +355,7 @@ export const Swarm: React.FC<SwarmProps> = ({
     }
     for (let l = 0; l < 3; l++) {
       if (!buckets[l]) continue;
-      ctx.strokeStyle = rgba(GREEN[0], GREEN[1], GREEN[2], (0.07 + l * 0.08) * opacity);
+      ctx.strokeStyle = rgba(GREEN[0], GREEN[1], GREEN[2], (0.04 + l * 0.05) * opacity);
       ctx.lineWidth = 1;
       ctx.stroke(buckets[l]!);
     }
@@ -472,17 +472,18 @@ export const MarkCloud: React.FC<{ frame: number; progress: number; scale?: numb
     const core = project({ x: 0, y: 0, z: 0 }, 0, cx, cy);
     const k = ramp(frame, 0, 1);
 
-    for (const s of sat) {
+    for (let i = 0; i < sat.length; i++) {
+      const s = sat[i];
       const p = project(s, 0, cx, cy);
       const near = Math.min(1, 900 / Math.max(200, p.d));
       const a = progress * near * opacity;
-      ctx.strokeStyle = rgba(GREEN[0], GREEN[1], GREEN[2], 0.35 * a);
+      ctx.strokeStyle = i % 2 ? rgba(BLUE[0], BLUE[1], BLUE[2], 0.32 * a) : rgba(GREEN[0], GREEN[1], GREEN[2], 0.35 * a);
       ctx.lineWidth = 1.4;
       ctx.beginPath();
       ctx.moveTo(core.x, core.y);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
-      ctx.fillStyle = rgba(GREEN_HOT[0], GREEN_HOT[1], GREEN_HOT[2], a);
+      ctx.fillStyle = i % 2 ? rgba(BLUE[0], BLUE[1], BLUE[2], a) : rgba(GREEN_HOT[0], GREEN_HOT[1], GREEN_HOT[2], a);
       ctx.beginPath();
       ctx.arc(p.x, p.y, 3.4 * near * progress, 0, TAU);
       ctx.fill();
@@ -493,7 +494,7 @@ export const MarkCloud: React.FC<{ frame: number; progress: number; scale?: numb
     }
 
     // orbiting particles
-    const cloud = fib(260, 1);
+    const cloud = fib(90, 1);
     for (let i = 0; i < cloud.length; i++) {
       const n = cloud[i];
       const a2 = frame * 0.006 + i * 0.02;
@@ -502,7 +503,7 @@ export const MarkCloud: React.FC<{ frame: number; progress: number; scale?: numb
       const y = n.y * R * 0.9;
       const p = project({ x, y, z }, 0, cx, cy);
       const near = Math.min(1, 1400 / Math.max(300, p.d));
-      const a = progress * near * 0.55 * opacity * (0.4 + 0.6 * Math.abs(Math.sin(i + frame * 0.05)));
+      const a = progress * near * 0.22 * opacity * (0.4 + 0.6 * Math.abs(Math.sin(i + frame * 0.05)));
       if (a < 0.02) continue;
       ctx.fillStyle = rgba(i % 3 === 0 ? BLUE[0] : GREEN[0], i % 3 === 0 ? BLUE[1] : GREEN[1], i % 3 === 0 ? BLUE[2] : GREEN[2], a);
       ctx.fillRect(p.x, p.y, 1.8 * near, 1.8 * near);
