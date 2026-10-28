@@ -4,6 +4,7 @@ import { MainComposition } from "./Main";
 import { CloudflareAd } from "./cloudflare/CloudflareAd";
 import { CF_DURATION } from "./cloudflare/palette";
 import { NexusAd } from "./nexus/NexusAd";
+import { Reel } from "./nexus3d/Reel";
 import { DURATION as NX_DURATION, FPS_AUTH as NX_FPS } from "./nexus/palette";
 import { FontGate } from "./FontGate";
 import { DURATION, FPS, HEIGHT, WIDTH } from "./theme";
@@ -36,6 +37,8 @@ export const RemotionRoot: React.FC = () => (
       width={WIDTH}
       height={HEIGHT}
     />
+    {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
+    <Composition id="NexusReel" component={Reel} durationInFrames={1080} fps={30} width={WIDTH} height={HEIGHT} />
     {/* NEXUS — 60s, authored at 30fps */}
     <Composition
       id="NexusAd"
