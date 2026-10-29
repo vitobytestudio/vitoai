@@ -18,6 +18,9 @@ import { Brief, DesignId, DEFAULT_BRIEF } from "../src/studio/types";
 import { DESIGNS, designById, pickDesign } from "../src/studio/registry";
 import { compileBrief, EXAMPLES } from "../src/studio/brief";
 import { renderOverlay, download, OverlayOptions } from "./overlay";
+import { StoryFilm } from "../src/studio/StoryFilm";
+import { planStory, totalSeconds, Storyboard } from "../src/studio/story";
+import { planWithAI, shootAll, aiHealth, preview } from "./ai";
 
 /* ------------------------------------------------------------------ config */
 
@@ -85,7 +88,7 @@ const Field: React.FC<{ label: string; value: string; onChange: (v: string) => v
 /* --------------------------------------------------------------------- app */
 
 const App: React.FC = () => {
-  const [tab, setTab] = useState<"generate" | "overlay">("generate");
+  const [tab, setTab] = useState<"generate" | "story" | "overlay">("story");
   const [prompt, setPrompt] = useState(EXAMPLES[0].text);
   const [brief, setBrief] = useState<Brief>(() => compileBrief(EXAMPLES[0].text));
   const [seconds, setSeconds] = useState(8);
@@ -94,6 +97,17 @@ const App: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [msg, setMsg] = useState<{ kind: "ok" | "warn" | ""; text: string }>({ kind: "", text: "" });
   const [webOk, setWebOk] = useState<boolean | null>(null);
+
+  /* story state */
+  const [storyBrief, setStoryBrief] = useState(
+    "A premium campaign for a Paris fashion house. Show the architecture of the city, a full blueprint of the flagship build, a montage of cars on a night boulevard, then the finished store inside a mall. End on the collection itself.",
+  );
+  const [story, setStory] = useState<Storyboard | null>(null);
+  const [footage, setFootage] = useState<Record<string, string>>({});
+  const [aiOn, setAiOn] = useState<boolean | null>(null);
+  const [phase, setPhase] = useState<string>("");
+  const [shotP, setShotP] = useState({ done: 0, total: 0 });
+  const [via, setVia] = useState<"ai" | "rules" | "">("");
 
   /* overlay state */
   const [clip, setClip] = useState<File | null>(null);
@@ -113,7 +127,37 @@ const App: React.FC = () => {
     canRenderMediaOnWeb({ videoCodecs: ["h264"], container: "mp4" })
       .then((r) => setWebOk(Boolean(r.canRender)))
       .catch(() => setWebOk(false));
+    aiHealth().then((h) => setAiOn(h.ai));
   }, []);
+
+  /* ---------------------------------------------------------------- story */
+  const plan = async () => {
+    setPhase("planning");
+    setVia("");
+    setStory(null);
+    setFootage({});
+    setMsg({ kind: "", text: "" });
+    const { story: s0, via: v } = await planWithAI(storyBrief, 30);
+    setStory(s0);
+    setVia(v);
+    setPhase("planned");
+    setShotP({ done: 0, total: s0.scenes.filter((x) => x.kind === "image").length });
+  };
+
+  const shoot = async () => {
+    if (!story) return;
+    setPhase("shooting");
+    setShotP({ done: 0, total: story.scenes.filter((x) => x.kind === "image").length });
+    const { footage: f, via: v } = await shootAll(story, (done, total) => setShotP({ done, total }));
+    setFootage(f);
+    setPhase("ready");
+    if (v === "field") {
+      setMsg({
+        kind: "warn",
+        text: "The image model is not reachable, so each shot is rendered as a generated field. Add the AI binding to shoot real stills.",
+      });
+    }
+  };
 
   const regenerate = (text: string) => {
     setPrompt(text);
@@ -230,8 +274,8 @@ const App: React.FC = () => {
               Describe it. <em>Get the film.</em>
             </h1>
             <p>
-              Six independent design systems. Your description picks one and builds the film around it —
-              then you can swap the design and keep the words.
+              Say what it should contain — the city, the build, the cars, the store — and the studio plans
+              the scenes, shoots the stills, and cuts them into one film. Six design systems, one arc.
             </p>
           </div>
           <div className="hero-note">
@@ -246,8 +290,9 @@ const App: React.FC = () => {
         {/* ---------------------------------------------------------- tabs */}
         <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--edge)", marginBottom: 28 }}>
           {([
-            ["generate", "01 · generate"],
-            ["overlay", "02 · upload & produce"],
+            ["story", "01 · describe a film"],
+            ["generate", "02 · one layout"],
+            ["overlay", "03 · upload & produce"],
           ] as const).map(([id, label]) => (
             <button
               key={id}
@@ -269,6 +314,183 @@ const App: React.FC = () => {
             </button>
           ))}
         </div>
+
+        {tab === "story" ? (
+          /* ---------------------------------------------------- story mode */
+          <section className="grid">
+            <div>
+              <div className="panel">
+                <div className="panel-head">
+                  <h3>describe the film</h3>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.16em", color: aiOn ? "var(--green)" : "var(--dim)" }}>
+                    {aiOn === null ? "checking ai…" : aiOn ? "agent online" : "rules engine"}
+                  </span>
+                </div>
+                <div className="panel-body">
+                  <Field label="what is the film about?" value={storyBrief} onChange={setStoryBrief} area max={700} />
+                  <Row>
+                    <button className="btn" style={{ flex: 1 }} onClick={plan} disabled={phase === "planning" || phase === "shooting"}>
+                      {phase === "planning" ? "thinking…" : "plan the film"}
+                    </button>
+                  </Row>
+                  <div className="notice">
+                    {aiOn
+                      ? "The agent turns your description into a scene plan, then shoots one still per image scene. Everything is generated and encoded on this device."
+                      : "No AI binding detected, so the built-in planner is used and shots render as generated fields. Films are still made, start to finish."}
+                  </div>
+
+                  {story ? (
+                    <>
+                      <div style={{ marginTop: 20, borderTop: "1px solid var(--edge2)", paddingTop: 16 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                          <div style={{ fontFamily: "var(--mono)", fontSize: 11, letterSpacing: "0.2em", color: "var(--green)", textTransform: "uppercase" }}>
+                            {via === "ai" ? "planned by model" : "planned by rules"}
+                          </div>
+                          <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.14em", color: "var(--dim)" }}>
+                            {preview(story)}
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: "var(--display)", fontSize: 19, marginTop: 8, color: "var(--white)" }}>
+                          {story.title}
+                        </div>
+                        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)", marginTop: 6, lineHeight: 1.6 }}>
+                          {story.logline}
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 16 }}>
+                        {story.scenes.map((sc, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              display: "flex",
+                              gap: 10,
+                              alignItems: "baseline",
+                              padding: "8px 0",
+                              borderBottom: "1px solid var(--edge2)",
+                            }}
+                          >
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--dim)", width: 18 }}>
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span
+                              style={{
+                                fontFamily: "var(--mono)",
+                                fontSize: 9.5,
+                                letterSpacing: "0.14em",
+                                textTransform: "uppercase",
+                                color: sc.kind === "image" ? "#63B3FF" : sc.kind === "logo" ? "var(--green)" : "var(--muted)",
+                                width: 44,
+                              }}
+                            >
+                              {sc.kind}
+                            </span>
+                            <span style={{ flex: 1, fontFamily: "var(--mono)", fontSize: 10, color: "var(--muted)", lineHeight: 1.5 }}>
+                              {sc.kind === "image" ? (sc.caption || "shot") : sc.kind === "type" ? (sc.headline || "").replace("\n", " ") : sc.kind === "stat" ? `${sc.hero} ${sc.unit || ""}` : "end card"}
+                            </span>
+                            <span style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--dim)" }}>{sc.seconds.toFixed(1)}s</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button className="btn ghost" style={{ marginTop: 16 }} onClick={shoot} disabled={phase === "shooting"}>
+                        {phase === "shooting" ? `shooting ${shotP.done}/${shotP.total}` : "shoot the scenes"}
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="stage">
+                <div className="stage-bar">
+                  <span>preview · 720 × 1280</span>
+                  <span style={{ color: story ? "var(--green)" : "var(--dim)" }}>
+                    {phase === "shooting" ? `shoot ${shotP.done}/${shotP.total}` : story ? `${story.scenes.length} scenes` : "no plan yet"}
+                  </span>
+                </div>
+
+                <div className="stage-inner" style={{ width: 300, height: 533 }}>
+                  {story ? (
+                    <Player
+                      key={`${story.title}-${Object.keys(footage).length}`}
+                      component={StoryFilm}
+                      inputProps={{ ...story, footage }}
+                      durationInFrames={Math.max(1, Math.round(totalSeconds(story) * FREE.fps))}
+                      fps={FREE.fps}
+                      compositionWidth={FREE.width}
+                      compositionHeight={FREE.height}
+                      style={{ width: "100%", height: "100%" }}
+                      controls
+                      loop
+                      autoPlay
+                      clickToPlay
+                      doubleClickToFullscreen
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--dim)",
+                        fontFamily: "var(--mono)",
+                        fontSize: 10,
+                        letterSpacing: "0.2em",
+                        textTransform: "uppercase",
+                        padding: 24,
+                        textAlign: "center",
+                        lineHeight: 1.9,
+                      }}
+                    >
+                      describe a film, then plan it
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ width: 300, marginTop: 22 }}>
+                  {story ? (
+                    <button
+                      className="btn"
+                      onClick={() =>
+                        exportStory(story, footage, setBusy, setProgress, setMsg, ledger, setLedger, null)
+                      }
+                      disabled={busy}
+                    >
+                      {busy ? "encoding…" : "render mp4"}
+                    </button>
+                  ) : null}
+                  {busy ? (
+                    <div className="progress">
+                      <div className="progress-label">
+                        <span>webcodecs</span>
+                        <span>{Math.round(progress * 100)}%</span>
+                      </div>
+                      <div className="progress-track">
+                        <i style={{ width: `${progress * 100}%` }} />
+                      </div>
+                    </div>
+                  ) : null}
+                  {msg.text ? <div className={`notice ${msg.kind}`}>{msg.text}</div> : null}
+                  {phase === "shooting" ? (
+                    <div className="progress">
+                      <div className="progress-label">
+                        <span>flux</span>
+                        <span>{shotP.done}/{shotP.total} stills</span>
+                      </div>
+                      <div className="progress-track">
+                        <i style={{ width: `${shotP.total ? (shotP.done / shotP.total) * 100 : 0}%` }} />
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {tab === "generate" ? (
           <section className="grid">
@@ -724,6 +946,61 @@ const App: React.FC = () => {
       </footer>
     </>
   );
+};
+
+/**
+ * Story export. Credits are spent only when the encoder actually finishes, so a
+ * failed render never charges the trial.
+ */
+const exportStory = async (
+  story: Storyboard,
+  footage: Record<string, string>,
+  setBusy: (b: boolean) => void,
+  setProgress: (p: number) => void,
+  setMsg: (m: { kind: "ok" | "warn" | ""; text: string }) => void,
+  ledger: Ledger,
+  setLedger: (l: Ledger) => void,
+  _core: unknown,
+) => {
+  setBusy(true);
+  setProgress(0);
+  setMsg({ kind: "", text: "" });
+  try {
+    const frames = Math.max(1, Math.round(totalSeconds(story) * FREE.fps));
+    const res = await renderMediaOnWeb({
+      composition: {
+        id: "NexusStory",
+        component: StoryFilm,
+        width: FREE.width,
+        height: FREE.height,
+        fps: FREE.fps,
+        durationInFrames: frames,
+        defaultProps: { ...story, footage },
+      },
+      inputProps: { ...story, footage },
+      container: "mp4",
+      videoCodec: "h264",
+      videoBitrate: "high",
+      onProgress: (p) => setProgress(p.progress),
+    });
+    const blob = await res.getBlob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `nexus-story-${Date.now()}.mp4`;
+    a.click();
+    const next = { used: ledger.used + Math.round(totalSeconds(story)), renders: ledger.renders + 1 };
+    setLedger(next);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    setMsg({ kind: "ok", text: `Rendered · ${(blob.size / 1048576).toFixed(1)} MB · ${story.scenes.length} scenes.` });
+  } catch (e) {
+    setMsg({ kind: "warn", text: `Render failed: ${(e as Error).message}` });
+  } finally {
+    setBusy(false);
+  }
 };
 
 const desigHint = (prompt: string) => {

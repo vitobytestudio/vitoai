@@ -9,6 +9,8 @@ import { VitoFilm } from "./vito/VitoFilm";
 import { Autonomy } from "./autonomy/Autonomy";
 import { Film } from "./studio/Film";
 import { DEFAULT_BRIEF } from "./studio/types";
+import { StoryFilm } from "./studio/StoryFilm";
+import { planStory, totalSeconds } from "./studio/story";
 import { DURATION as AUTO_DUR, FPS as AUTO_FPS, W as AUTO_W, H as AUTO_H } from "./autonomy/space";
 import { DURATION as NX_DURATION, FPS_AUTH as NX_FPS } from "./nexus/palette";
 import { FontGate } from "./FontGate";
@@ -53,6 +55,22 @@ export const RemotionRoot: React.FC = () => (
       width={720}
       height={1280}
       defaultProps={DEFAULT_BRIEF}
+    />
+    {/* multi-scene story film — the AI planning target */}
+    <Composition
+      id="StoryFilm"
+      component={StoryFilm}
+      durationInFrames={Math.round(
+        totalSeconds(
+          planStory(
+            "A premium campaign in Paris, a full blueprint plan, a car montage, then the flagship clothing store inside a mall.",
+          ),
+        ) * 30,
+      )}
+      fps={30}
+      width={720}
+      height={1280}
+      defaultProps={{ ...planStory("A premium campaign in Paris, a full blueprint plan, a car montage, then the flagship clothing store inside a mall.") }}
     />
     {/* 32 s, one continuous take — no cuts */}
     <Composition
