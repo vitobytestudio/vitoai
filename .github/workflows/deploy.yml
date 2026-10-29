@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: deploy-studio
@@ -124,6 +124,18 @@ jobs:
           js=$(curl -s -m 30 -o /tmp/app.js -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
           echo "GET /app.js -> $js"
           grep -o "VITO LITE V2" /tmp/app.js | head -1
+
+      - name: Record the URL in the repository
+        if: env.STUDIO_URL != ''
+        run: |
+          echo "$STUDIO_URL" > STUDIO_URL.txt
+          git config user.name "vito deploy"
+          git config user.email "deploy@vitoai.dev"
+          git add STUDIO_URL.txt
+          if git diff --cached --quiet; then echo "unchanged"; else
+            git commit -m "chore: studio url $STUDIO_URL [skip ci]"
+            git push
+          fi
 
       - name: Keep the deploy log
         if: always()
