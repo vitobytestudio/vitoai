@@ -88,7 +88,7 @@ jobs:
             printf '%s\n' "$CREATE" | grep -Ei "success|id" | head -3 || true
             ID=$(printf '%s' "$CREATE" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=s.match(/\"id\"\s*:\s*\"([a-f0-9]+)\"/)||s.match(/id\s*=\s*\"([a-f0-9]+)\"/);process.stdout.write(a?a[1]:'')})")
           fi
-          if [ -n "$ID" ]; then
+          if [ -n "$ID" ] && printf '%s' "$ID" | grep -Eq '^[a-f0-9]{32}$'; then
             printf '\n[[kv_namespaces]]\nbinding = "FEEDBACK"\nid = "%s"\n' "$ID" >> wrangler.toml
             echo "feedback store bound ($ID)"
           else
@@ -96,10 +96,42 @@ jobs:
           fi
 
       - name: Deploy
+        # Two attempts. The Worker is named "nexus" so that its address is
+        # nexus.vitobytestudio.workers.dev; if the token is scoped to the older
+        # worker name it cannot create "nexus", so we fall back to the name that
+        # already exists rather than failing the deploy. Whatever happens, the
+        # name actually deployed is what the next steps report.
         run: |
-          set -o pipefail
-          npx --yes wrangler@4 deploy 2>&1 | tee /tmp/deploy.log
-          # surface only the lines that matter, nothing secret is in them
+          fail() {
+            echo "::error::$1"
+            echo "### Deploy failed" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -30 /tmp/deploy.log >> "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+
+          NAME=$(node -e "const t=require('fs').readFileSync('wrangler.toml','utf8');const m=t.match(/name\s*=\s*\"([^\"]+)\"/);process.stdout.write(m?m[1]:'nexus')")
+
+          if npx --yes wrangler@4 deploy > /tmp/deploy.log 2>&1; then
+            echo "deployed as $NAME"
+            echo "WORKER_NAME=$NAME" >> "$GITHUB_ENV"
+          else
+            echo "::warning::deploy as \"$NAME\" failed — retrying as \"vitobytestudio\""
+            cp /tmp/deploy.log /tmp/deploy-first.log
+            sed -i 's/^name = ".*"/name = "vitobytestudio"/' wrangler.toml
+            if npx --yes wrangler@4 deploy > /tmp/deploy.log 2>&1; then
+              echo "deployed as vitobytestudio (the token is scoped to this worker)"
+              echo "WORKER_NAME=vitobytestudio" >> "$GITHUB_ENV"
+              echo "### Address" >> "$GITHUB_STEP_SUMMARY"
+              echo "The token could not create a worker named \`$NAME\`; this deploy went to the existing worker instead." >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              head -12 /tmp/deploy-first.log >> "$GITHUB_STEP_SUMMARY" || true
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+            else
+              fail "wrangler could not deploy under either name"
+            fi
+          fi
           grep -E "Uploaded|Deployed|https://|env\." /tmp/deploy.log | tail -20 || true
 
       - name: Resolve the studio URL
@@ -107,7 +139,7 @@ jobs:
           SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
             | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).result?.subdomain||'')}catch{}})")
-          NAME=$(node -e "const t=require('fs').readFileSync('wrangler.toml','utf8');const m=t.match(/name\s*=\s*\"([^\"]+)\"/);process.stdout.write(m?m[1]:'vitobytestudio')")
+          NAME="${WORKER_NAME:-nexus}"
           if [ -n "$SUB" ]; then
             URL="https://${NAME}.${SUB}.workers.dev"
           else
