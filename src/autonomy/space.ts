@@ -115,7 +115,15 @@ export function depthA(d: number): number {
 /** every letter lives in a 100×100 box, y pointing down, stroked not filled */
 export const GLYPH_H = 520;
 /** letters ride above the centre so the card below never fights them */
-export const GLYPH_Y = -170;
+export const GLYPH_Y = -120;
+
+/**
+ * The corridor zig-zags: odd letters sit left, even letters sit right, so the
+ * camera threads between them instead of flying through a stack. Without this
+ * two letters land on the same screen point and read as a mistake.
+ */
+export const glyphX = (i: number) => (i % 2 === 0 ? -250 : 250);
+export const glyphY = (i: number) => GLYPH_Y + (i % 2 === 0 ? -40 : 40);
 
 const CIRCLE: [number, number][] = Array.from({ length: 41 }, (_, i) => {
   const a = (i / 40) * Math.PI * 2 - Math.PI / 2;
@@ -303,7 +311,7 @@ export function glyphPoint(
   scale = 1,
 ): [number, number, number] {
   const k = (GLYPH_H / 100) * scale;
-  return [(gx - 50) * k, (gy - 50) * k + GLYPH_Y, LZ(i)];
+  return [(gx - 50) * k + glyphX(i), (gy - 50) * k + glyphY(i), LZ(i)];
 }
 
 /* -------------------------------------------------------------------------- */

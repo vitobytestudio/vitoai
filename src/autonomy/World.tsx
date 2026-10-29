@@ -15,6 +15,8 @@ import {
   GLYPHS,
   GLYPH_H,
   GLYPH_Y,
+  glyphX,
+  glyphY,
   LETTERS,
   FAR,
   NEAR,
@@ -174,8 +176,8 @@ export const World: React.FC = () => {
           const q = st[s + 1];
           seg(
             ctx,
-            [(p[0] - 50) * k, (p[1] - 50) * k + GLYPH_Y, L.z],
-            [(q[0] - 50) * k, (q[1] - 50) * k + GLYPH_Y, L.z],
+            [(p[0] - 50) * k + glyphX(i), (p[1] - 50) * k + glyphY(i), L.z],
+            [(q[0] - 50) * k + glyphX(i), (q[1] - 50) * k + glyphY(i), L.z],
             cz,
             cy,
             V.green,
@@ -192,6 +194,7 @@ export const World: React.FC = () => {
     const mkA = depthA(mz - cz) * mk;
     if (mkA > 0.002) {
       const k = 300 / 100;
+      const cx0 = 0;
       const rev = clamp((f - 1668) / 54);
       for (const st of V_STROKES) {
         for (let s = 0; s < st.length - 1; s++) {
@@ -199,9 +202,9 @@ export const World: React.FC = () => {
           if (t <= 0) continue;
           const p = st[s];
           const q = st[s + 1];
-          const x1 = (p[0] - 50) * k;
+          const x1 = (p[0] - 50) * k + cx0;
           const y1 = (p[1] - 50) * k + GLYPH_Y + 20;
-          const x2 = (q[0] - 50) * k;
+          const x2 = (q[0] - 50) * k + cx0;
           const y2 = (q[1] - 50) * k + GLYPH_Y + 20;
           seg(ctx, [x1, y1, mz], [x2, y2, mz], cz, cy, V.green, 2.6, mkA);
         }

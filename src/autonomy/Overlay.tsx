@@ -142,11 +142,12 @@ const Card: React.FC<{ L: Letter; f: number; cz: number; cy: number }> = ({
     win(f, L.at - 12, L.at + 16) *
     out(f, 1545, 1650);
 
+  const opposite = L.side * -1;
   return (
-    <At x={L.side * 168} y={430} z={L.z + 210} cz={cz} cy={cy} opacity={a}>
+    <At x={opposite * 200} y={470} z={L.z + 210} cz={cz} cy={cy} opacity={a}>
       <div
         style={{
-          width: 500,
+          width: 470,
           padding: "44px 38px 42px",
           background:
             "radial-gradient(ellipse at 50% 45%, rgba(5,11,20,0.94) 0%, rgba(5,11,20,0.86) 48%, rgba(5,11,20,0) 78%)",
@@ -323,6 +324,8 @@ const EndCard: React.FC<{ f: number; cz: number; cy: number }> = ({ f, cz, cy })
             color: V.white,
             lineHeight: 1,
             textAlign: "center",
+            whiteSpace: "nowrap",
+            padding: "0 40px",
           }}
         >
           VITO BYTE
