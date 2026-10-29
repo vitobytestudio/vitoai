@@ -23,5 +23,12 @@ await esbuild.build({
 });
 
 cpSync("studio/index.html", "studio/dist/index.html");
+// fonts are fetched from /public/fonts by app.css; mirror them into the bundle
+// so the Worker serves a single origin and no external requests are made
+try {
+  cpSync("public/fonts", "studio/dist/public/fonts", { recursive: true });
+} catch {
+  console.log("no public/fonts to mirror");
+}
 cpSync("studio/app.css", "studio/dist/app.css");
 console.log("studio/dist ready");

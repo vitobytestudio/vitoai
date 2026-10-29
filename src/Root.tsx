@@ -7,7 +7,8 @@ import { NexusAd } from "./nexus/NexusAd";
 import { Reel } from "./nexus3d/Reel";
 import { VitoFilm } from "./vito/VitoFilm";
 import { Autonomy } from "./autonomy/Autonomy";
-import { StudioFilm, DEFAULT_BRIEF } from "./studio/StudioFilm";
+import { Film } from "./studio/Film";
+import { DEFAULT_BRIEF } from "./studio/types";
 import { DURATION as AUTO_DUR, FPS as AUTO_FPS, W as AUTO_W, H as AUTO_H } from "./autonomy/space";
 import { DURATION as NX_DURATION, FPS_AUTH as NX_FPS } from "./nexus/palette";
 import { FontGate } from "./FontGate";
@@ -46,7 +47,7 @@ export const RemotionRoot: React.FC = () => (
         rendered and audited through the same pipeline as everything else */}
     <Composition
       id="StudioFilm"
-      component={StudioFilm}
+      component={Film}
       durationInFrames={240}
       fps={30}
       width={720}

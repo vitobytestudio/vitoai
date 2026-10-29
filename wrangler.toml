@@ -1,0 +1,15 @@
+name = "vitobytestudio"
+main = "studio/worker.js"
+compatibility_date = "2024-11-01"
+
+# Everything the studio needs is static. There is no render service, no queue
+# and no database — the film is encoded in the visitor's browser, so a KV-less,
+# D1-less Worker is the whole backend.
+[assets]
+directory = "./studio/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = false
+
+[observability]
+enabled = true
