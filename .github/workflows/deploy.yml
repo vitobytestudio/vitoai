@@ -1,4 +1,8 @@
-name: Deploy NEXUS STUDIO
+name: Deploy VITO STUDIO
+
+# The studio is a Worker plus static assets. This workflow builds the bundle and
+# publishes it with the Cloudflare token kept in repository secrets — the token
+# is never echoed, and the account id is discovered from it when not supplied.
 
 on:
   push:
@@ -10,25 +14,100 @@ on:
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-studio
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: "20"
           cache: npm
 
-      - run: npm ci --ignore-scripts
+      - name: Install
+        run: npm ci --no-audit --no-fund
 
       - name: Build the studio bundle
-        run: node studio/build.mjs
+        run: node studio/build.mjs && ls -lh studio/dist | head -6
 
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+      - name: Resolve credentials
+        env:
+          # the token may have been saved under any of these names
+          T1: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          T2: ${{ secrets.CLOUDFLARE_TOKEN }}
+          T3: ${{ secrets.CF_API_TOKEN }}
+          T4: ${{ secrets.CLOUDFLARE_API }}
+          A1: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          A2: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          TOKEN="${T1:-${T2:-${T3:-$T4}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No Cloudflare token in secrets. Found: CLOUDFLARE_API_TOKEN=$([ -n "$T1" ] && echo yes || echo no) CLOUDFLARE_TOKEN=$([ -n "$T2" ] && echo yes || echo no) CF_API_TOKEN=$([ -n "$T3" ] && echo yes || echo no) CLOUDFLARE_API=$([ -n "$T4" ] && echo yes || echo no)"
+            exit 1
+          fi
+          # never let the value reach a log line
+          echo "::add-mask::$TOKEN"
+          ACCOUNT="${A1:-${A2:-}}"
+          if [ -z "$ACCOUNT" ]; then
+            ACCOUNT=$(curl -sS -H "Authorization: Bearer $TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts" \
+              | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);process.stdout.write(j.result?.[0]?.id||'')}catch{process.stdout.write('')}})")
+          fi
+          if [ -z "$ACCOUNT" ]; then
+            echo "::error::Token could not be resolved to an account — check the token has Workers Scripts: Edit."
+            exit 1
+          fi
+          echo "::add-mask::$ACCOUNT"
+          {
+            echo "CLOUDFLARE_API_TOKEN=$TOKEN"
+            echo "CLOUDFLARE_ACCOUNT_ID=$ACCOUNT"
+          } >> "$GITHUB_ENV"
+          echo "credentials resolved ($([ -n "${A1:-${A2:-}}" ] && echo from secret || echo from API))"
+
+      - name: Deploy
+        run: |
+          set -o pipefail
+          npx --yes wrangler@4 deploy 2>&1 | tee /tmp/deploy.log
+          # surface only the lines that matter, nothing secret is in them
+          grep -E "Uploaded|Deployed|https://|env\." /tmp/deploy.log | tail -20 || true
+
+      - name: Resolve the studio URL
+        run: |
+          SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).result?.subdomain||'')}catch{}})")
+          NAME=$(node -e "const t=require('fs').readFileSync('wrangler.toml','utf8');const m=t.match(/name\s*=\s*\"([^\"]+)\"/);process.stdout.write(m?m[1]:'vitobytestudio')")
+          if [ -n "$SUB" ]; then
+            URL="https://${NAME}.${SUB}.workers.dev"
+          else
+            URL=""
+          fi
+          echo "STUDIO_URL=$URL" >> "$GITHUB_ENV"
+          {
+            echo "### VITO STUDIO deployed"
+            echo ""
+            if [ -n "$URL" ]; then echo "**$URL**"; else echo "Check the Workers dashboard for the assigned URL."; fi
+            echo ""
+            echo "Worker: \`$NAME\` · account resolved · assets from \`studio/dist\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test
+        if: env.STUDIO_URL != ''
+        run: |
+          set -e
+          code=$(curl -s -o /tmp/page.html -w "%{http_code}" "$STUDIO_URL/")
+          echo "GET / -> $code"
+          head -c 300 /tmp/page.html | tr -d '\n' | cut -c1-160; echo
+          js=$(curl -s -o /dev/null -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
+          echo "GET /app.js -> $js"
+          [ "$code" = "200" ] || (echo "::error::The studio did not answer 200" && exit 1)
