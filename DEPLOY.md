@@ -92,10 +92,31 @@ On deploy you get two endpoints:
 |---|---|---|
 | `POST /api/plan` | brief → storyboard JSON | Llama 3.1 8B |
 | `POST /api/shot` | prompt → 1024px JPEG | FLUX.1 schnell |
+| `POST /api/review` | image → score, problems, fix | Llama 3.2 11B Vision |
 | `GET /api/health` | reports whether AI is bound | — |
 
-**Free tier: 10,000 neurons/day, no card.** That is roughly 600 plan calls or
-~250 stills per day. When the day's budget runs out the endpoints return an
+### The loop
+
+The studio does not fire one request and present the result. It runs the same
+loop a person with tools runs:
+
+```
+plan → shoot → LOOK AT IT → judge against the brief → correct the prompt → shoot again
+```
+
+`/api/review` returns a score, a list of problems and a one-line photographic
+correction. If the score is under 70 the client appends the correction to the
+prompt and shoots once more, keeping whichever frame scored higher. Every step
+is printed in the "what the agent did" panel, so the reasoning is visible
+instead of hidden.
+
+Two attempts is deliberate. It catches the common failures — a rendered-looking
+frame, an empty street, a distorted facade — without turning a 30-second film
+into a five-minute bill.
+
+**Free tier: 10,000 neurons/day, no card.** That is roughly 600 plan calls, or
+~250 stills, or ~120 stills with the critic enabled (it adds a vision call per
+shot). The critic toggle in the UI turns it off if the day's budget is short. When the day's budget runs out the endpoints return an
 error and the studio falls back to its built-in planner and generated fields —
 **films still get made, they just stop using the model.**
 

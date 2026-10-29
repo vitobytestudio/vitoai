@@ -20,7 +20,7 @@ import { compileBrief, EXAMPLES } from "../src/studio/brief";
 import { renderOverlay, download, OverlayOptions } from "./overlay";
 import { StoryFilm } from "../src/studio/StoryFilm";
 import { planStory, totalSeconds, Storyboard } from "../src/studio/story";
-import { planWithAI, shootAll, aiHealth, preview } from "./ai";
+import { planWithAI, shootAll, aiHealth, preview, Trace } from "./ai";
 
 /* ------------------------------------------------------------------ config */
 
@@ -108,6 +108,9 @@ const App: React.FC = () => {
   const [phase, setPhase] = useState<string>("");
   const [shotP, setShotP] = useState({ done: 0, total: 0 });
   const [via, setVia] = useState<"ai" | "rules" | "">("");
+  const [trace, setTrace] = useState<Trace[]>([]);
+  const [reviewOn, setReviewOn] = useState(true);
+  const stopRef = useRef(false);
 
   /* overlay state */
   const [clip, setClip] = useState<File | null>(null);
@@ -131,13 +134,16 @@ const App: React.FC = () => {
   }, []);
 
   /* ---------------------------------------------------------------- story */
+  const log = (t: Trace) => setTrace((x) => [...x, t]);
+
   const plan = async () => {
     setPhase("planning");
     setVia("");
     setStory(null);
     setFootage({});
+    setTrace([]);
     setMsg({ kind: "", text: "" });
-    const { story: s0, via: v } = await planWithAI(storyBrief, 30);
+    const { story: s0, via: v } = await planWithAI(storyBrief, 30, log);
     setStory(s0);
     setVia(v);
     setPhase("planned");
@@ -146,16 +152,24 @@ const App: React.FC = () => {
 
   const shoot = async () => {
     if (!story) return;
+    stopRef.current = false;
     setPhase("shooting");
     setShotP({ done: 0, total: story.scenes.filter((x) => x.kind === "image").length });
-    const { footage: f, via: v } = await shootAll(story, (done, total) => setShotP({ done, total }));
+    const { footage: f, shots, avg } = await shootAll(
+      story,
+      log,
+      (done, total) => setShotP({ done, total }),
+      { review: reviewOn, shouldStop: () => stopRef.current },
+    );
     setFootage(f);
     setPhase("ready");
-    if (v === "field") {
+    if (shots === 0) {
       setMsg({
         kind: "warn",
-        text: "The image model is not reachable, so each shot is rendered as a generated field. Add the AI binding to shoot real stills.",
+        text: "The image model is unreachable, so scenes are rendered as generated fields. Bind Workers AI to shoot real stills.",
       });
+    } else if (avg !== null) {
+      setMsg({ kind: avg >= 70 ? "ok" : "warn", text: `Shot ${shots} scenes · mean critic score ${avg}/100.` });
     }
   };
 
@@ -486,6 +500,106 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   ) : null}
+                </div>
+              </div>
+
+              {/* ------------------------------------------- the agent's work */}
+              <div className="panel" style={{ marginTop: 18 }}>
+                <div className="panel-head">
+                  <h3>what the agent did</h3>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.16em", color: "var(--dim)" }}>
+                    {trace.length ? `${trace.length} steps` : "idle"}
+                  </span>
+                </div>
+                <div className="panel-body" style={{ padding: "14px 18px 18px" }}>
+                  {trace.length === 0 ? (
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 10.5, letterSpacing: "0.12em", color: "var(--dim)", lineHeight: 1.9 }}>
+                      It plans, shoots, looks at each frame, judges it, and reshoots what fails.
+                      Press play on the plan to watch it work.
+                    </div>
+                  ) : (
+                    <div style={{ maxHeight: 260, overflowY: "auto" }}>
+                      {trace.map((t, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            gap: 10,
+                            alignItems: "flex-start",
+                            padding: "6px 0",
+                            borderBottom: "1px solid var(--edge2)",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              marginTop: 5,
+                              flex: "0 0 6px",
+                              background: t.ok === false ? "#FFB020" : t.kind === "fix" ? "#FF3D6E" : "var(--green)",
+                            }}
+                          />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span
+                              style={{
+                                fontFamily: "var(--mono)",
+                                fontSize: 10,
+                                letterSpacing: "0.1em",
+                                color: t.ok === false ? "#FFB020" : "var(--white)",
+                              }}
+                            >
+                              {t.label}
+                            </span>
+                            {t.detail ? (
+                              <span
+                                style={{
+                                  display: "block",
+                                  fontFamily: "var(--mono)",
+                                  fontSize: 9.5,
+                                  color: "var(--muted)",
+                                  lineHeight: 1.55,
+                                  marginTop: 2,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {t.detail}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span style={{ fontFamily: "var(--mono)", fontSize: 9, color: "var(--dim)", flex: "0 0 auto" }}>
+                            {t.ms ? `${t.ms}ms` : t.kind}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <label
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      fontFamily: "var(--mono)",
+                      fontSize: 10,
+                      letterSpacing: "0.14em",
+                      textTransform: "uppercase",
+                      color: "var(--muted)",
+                      marginTop: 14,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={reviewOn}
+                      onChange={(e) => setReviewOn(e.target.checked)}
+                      style={{ accentColor: "#00FF88" }}
+                    />
+                    critic reviews each shot
+                  </label>
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--dim)", lineHeight: 1.6, marginTop: 6 }}>
+                    Reviewing costs an extra model call per shot and roughly doubles neurons.
+                  </div>
                 </div>
               </div>
             </div>
