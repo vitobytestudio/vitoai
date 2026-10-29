@@ -160,3 +160,27 @@ it only removes it from future serving.
 - **Three libraries will be reached for and none is needed.** Sine + noise +
   envelope is a complete sound design toolkit at 48 kHz; 23 s of stereo score
   synthesises in half a second.
+
+## G — the door (Oct 2026)
+
+- **A Latin-only display face will stall an Arabic headline.** Space Grotesk
+  carries no Arabic glyphs; asking the renderer for a 104px headline in a family
+  with no glyph for the text does not fall back gracefully — it hangs the frame
+  until the render timeout and reports nothing useful. Route every string
+  through `fontFor(rtl)` / `monoFor(rtl)`: Arabic gets Cairo, Latin gets Space
+  Grotesk and JetBrains Mono. The same trap exists in the browser build, where
+  it degrades to an invisible glyph instead of a hang.
+- **Diagnose a hang by bisecting the props, not the code.** Injecting a real
+  plan and shrinking it beat after beat located the failure in the hook's
+  headline in four renders, after an hour of guessing at Audio and delayRender.
+- **A world may appear once per film.** Cycling `allowed[i % n]` with three
+  places and four place-beats repeated the Haussmann facade; the pool needs a
+  second tier to draw from, not a modulus.
+- **An empty lower half reads as a bug, not as restraint.** The hook frame only
+  filled while copy animated in. A designed field under the type — bars that
+  rise with the score — is what makes a sparse frame look intentional.
+- **Narration needs its own scrim.** White text over a lit Haussmann facade is
+  unreadable however good the shadow is; a 620px gradient at 55–90% black under
+  the lower third fixes it and also seats the frame.
+- **`Audio` must not receive an empty string.** `score: undefined` is fine;
+  `src=""` raises a load error that surfaces as a generic render timeout.
