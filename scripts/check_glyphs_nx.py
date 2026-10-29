@@ -48,7 +48,7 @@ def strings(path):
 
 
 bad = 0
-for path in sorted(glob.glob("src/nexus/*.tsx")) + sorted(glob.glob("src/cloudflare/*.tsx")):
+for path in sorted(glob.glob("src/nexus/*.tsx")) + sorted(glob.glob("src/nexus3d/*.tsx")) + sorted(glob.glob("src/cloudflare/*.tsx")) + sorted(glob.glob("src/vito/*.tsx")):
     for text, line in strings(path):
         miss = sorted({c for c in text if ord(c) not in ALL and ord(c) not in WS})
         if miss:
