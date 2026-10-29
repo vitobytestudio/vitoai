@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, DISP, PAD, clamp, win, rgba, hash, useTimeline, useHero, linesOf, fit, DW,
 } from "../kit";
+import { Grade, MotionNumber, display, EASE, at } from "../craft";
 
 export const Kinetic: React.FC<Brief> = (p) => {
   const t = useTimeline();
@@ -58,10 +59,8 @@ export const Kinetic: React.FC<Brief> = (p) => {
               <div
                 style={{
                   fontFamily: DISP,
-                  fontSize: hSize,
+                  ...display(hSize, 1.08),
                   fontWeight: 700,
-                  lineHeight: 1.08,
-                  letterSpacing: "-0.045em",
                   color: i === 0 ? "#E8F4FF" : a,
                   transform: `translateY(${(1 - on) * 108}%)`,
                   whiteSpace: "nowrap",
@@ -97,7 +96,7 @@ export const Kinetic: React.FC<Brief> = (p) => {
               letterSpacing: "-0.06em",
               lineHeight: 1,
               color: "transparent",
-              WebkitTextStroke: `2px ${rgba(a, 0.5)}`,
+              WebkitTextStroke: `1.5px ${rgba(a, 0.22)}`,
               transform: `scale(${scale})`,
               transformOrigin: `0 40%`,
             }}
@@ -109,18 +108,17 @@ export const Kinetic: React.FC<Brief> = (p) => {
               position: "absolute",
               left: 0,
               top: 0,
-              fontFamily: DISP,
-              fontSize: 268,
-              fontWeight: 700,
-              letterSpacing: "-0.06em",
-              lineHeight: 1,
-              color: a,
-              fontVariantNumeric: "tabular-nums",
               transform: `scale(${scale})`,
-              transformOrigin: `0 40%`,
+              transformOrigin: "0 40%",
             }}
           >
-            {hero.value}
+            <MotionNumber
+              value={hero.value}
+              active={hero.numeric && hero.p > 0.02 && hero.p < 0.985 ? 1 : 0}
+              size={268}
+              color={a}
+              font={DISP}
+            />
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 10 }}>
@@ -171,9 +169,9 @@ export const Kinetic: React.FC<Brief> = (p) => {
                 top: off,
                 width: "130%",
                 fontFamily: DISP,
-                fontSize: 96,
+                fontSize: 68,
                 fontWeight: 700,
-                letterSpacing: "-0.04em",
+                letterSpacing: "-0.03em",
                 whiteSpace: "nowrap",
                 color: solid ? rgba(a, 0.85) : "transparent",
                 WebkitTextStroke: solid ? "none" : `1px ${rgba("#E8F4FF", 0.22)}`,
@@ -222,7 +220,7 @@ export const Kinetic: React.FC<Brief> = (p) => {
         </div>
       </div>
 
-      <Grain />
+      <Grade f={f} accent={a} amount={1} />
     </Stage>
   );
 };

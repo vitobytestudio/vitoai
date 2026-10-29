@@ -30,7 +30,7 @@ export type Scene = {
   hero?: string;
   unit?: string;
   label?: string;
-  transition?: "cut" | "dissolve";
+  transition?: "cut" | "dissolve" | "whip" | "match" | "dip";
 };
 
 export type Storyboard = {
@@ -277,7 +277,9 @@ export const validatePlan = (raw: unknown, fallback: Storyboard): Storyboard => 
       hero: typeof sc.hero === "string" ? sc.hero.slice(0, 12) : undefined,
       unit: typeof sc.unit === "string" ? sc.unit.slice(0, 10) : undefined,
       label: typeof sc.label === "string" ? sc.label.slice(0, 60) : undefined,
-      transition: sc.transition === "cut" ? "cut" : "dissolve",
+      transition: ["cut", "dissolve", "whip", "match", "dip"].includes(String(sc.transition))
+        ? (sc.transition as Scene["transition"])
+        : "dissolve",
     });
   }
 

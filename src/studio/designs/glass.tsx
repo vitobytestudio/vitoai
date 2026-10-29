@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, DISP, PAD, DW, fit, win, rgba, useTimeline, useHero,
 } from "../kit";
+import { Grade, MotionNumber, display } from "../craft";
 
 const Chip: React.FC<{ label: string; value: string; accent: string; on: number }> = ({
   label,
@@ -121,19 +122,14 @@ export const Glass: React.FC<Brief> = (p) => {
           <div style={{ fontFamily: MONO, fontSize: 17, letterSpacing: "0.3em", color: "rgba(232,244,255,0.45)", textTransform: "uppercase" }}>
             {p.unit || "value"}
           </div>
-          <div
-            style={{
-              fontFamily: DISP,
-              fontSize: 230,
-              fontWeight: 700,
-              letterSpacing: "-0.06em",
-              lineHeight: 0.92,
-              color: "#FFFFFF",
-              marginTop: 14,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {hero.value}
+          <div style={{ marginTop: 14 }}>
+            <MotionNumber
+              value={hero.value}
+              active={hero.numeric && hero.p > 0.02 && hero.p < 0.985 ? 1 : 0}
+              size={230}
+              color="#FFFFFF"
+              font={DISP}
+            />
           </div>
           <div style={{ height: 1, background: "rgba(255,255,255,0.14)", margin: "30px 0 26px" }} />
           <div style={{ display: "flex", gap: 12 }}>
@@ -155,7 +151,7 @@ export const Glass: React.FC<Brief> = (p) => {
             position: "absolute",
             left: PAD,
             right: PAD,
-            top: 1130,
+            top: 1090,
             opacity: win(f, F * 0.42, F * 0.5),
             transform: `translateY(${(1 - win(f, F * 0.42, F * 0.52)) * 26}px)`,
           }}
@@ -163,10 +159,8 @@ export const Glass: React.FC<Brief> = (p) => {
           <div
             style={{
               fontFamily: DISP,
-              fontSize: fit(p.headline.replace("\n", " "), DW - PAD * 2, 88, 46),
+              ...display(fit(p.headline.replace("\n", " "), DW - PAD * 2, 88, 46), 1.1),
               fontWeight: 600,
-              lineHeight: 1.1,
-              letterSpacing: "-0.038em",
               color: "#FFFFFF",
               whiteSpace: "pre-line",
             }}
@@ -175,6 +169,14 @@ export const Glass: React.FC<Brief> = (p) => {
           </div>
           <div style={{ fontFamily: MONO, fontSize: 21, letterSpacing: "0.1em", color: "rgba(232,244,255,0.45)", marginTop: 28 }}>
             {p.sub}
+          </div>
+          {/* a closing rule so the composition has a floor, not a void */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 74, opacity: win(f, F * 0.58, F * 0.68) }}>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.14)" }} />
+            <div style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.32em", color: "rgba(232,244,255,0.36)", textTransform: "uppercase" }}>
+              {p.kicker}
+            </div>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.14)" }} />
           </div>
         </div>
       </div>
@@ -217,7 +219,7 @@ export const Glass: React.FC<Brief> = (p) => {
         </div>
       </div>
 
-      <Grain opacity={0.026} />
+      <Grade f={f} accent={a} amount={0.8} vignette={0.42} />
     </Stage>
   );
 };

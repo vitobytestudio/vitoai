@@ -49,7 +49,7 @@ Return ONLY minified JSON, no prose:
 {"title":"","logline":"","accent":"#RRGGBB","cta":"domain.tld","scenes":[...]}
 
 Each scene is one of:
-{"kind":"image","seconds":3.5,"shot":"<photographic prompt: place, subject, light, lens. no text, no logos>","motion":"in|out|pan-left|pan-right","caption":"<2 words>","transition":"dissolve|cut"}
+{"kind":"image","seconds":3.5,"shot":"<photographic prompt: place, subject, light, lens. no text, no logos>","motion":"in|out|pan-left|pan-right","caption":"<2 words>","transition":"dissolve|cut|whip|match|dip"}
 {"kind":"type","seconds":3,"design":"kinetic|terminal|glass|blueprint|signal|editorial","kicker":"<3 words>","headline":"<max 6 words, may contain one \\n>"}
 {"kind":"stat","seconds":3,"hero":"<number>","unit":"<word>","label":"<max 8 words>"}
 {"kind":"logo","seconds":3.2}
@@ -60,7 +60,10 @@ Rules:
 - Vary "design" in type scenes; never repeat the same one twice.
 - "shot" must read like a photograph brief, never mention text or words.
 - Keep every headline under 6 words. Never repeat the same words in two scenes.
-- Total seconds must not exceed 30.`;
+- Total seconds must not exceed 30.
+- Choose transitions deliberately: "whip" into a high-energy beat, "match" when
+  two shots share geometry, "dip" for a change of act, "cut" on a hard number.
+  Never use the same transition three times in a row.`;
 
 const handlePlan = async (req, env) => {
   if (!env.AI) return json({ error: "no_ai_binding", detail: 'Add [ai] binding = "AI" to wrangler.toml' }, 501);

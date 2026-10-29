@@ -14,6 +14,7 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { Storyboard, Scene as SceneT, totalSeconds } from "./story";
 import { designById } from "./registry";
 import { Grain, Mark, MONO, DISP, DW, DH, rgba, clamp, win, hash, PAD, mix } from "./kit";
+import { Grade, cutState, incoming, display, EASE } from "./craft";
 
 export type StoryProps = Storyboard & {
   /** scene index → image url (data: or remote) */
@@ -161,10 +162,8 @@ const SceneBody: React.FC<{
         <div
           style={{
             fontFamily: DISP,
-            fontSize: 300,
+            ...display(300, 0.9),
             fontWeight: 700,
-            letterSpacing: "-0.065em",
-            lineHeight: 0.9,
             color: accent,
             fontVariantNumeric: "tabular-nums",
             opacity: on,
@@ -282,25 +281,27 @@ export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage }
   const m = marks[idx] || { start: 0, len: 1 };
   const progress = clamp((f - m.start) / m.len);
 
-  /* the incoming scene of a dissolve, drawn over the current one */
-  const nextIdx = idx + 1;
-  const XF = Math.round(fps * 0.45);
-  const intoNext = nextIdx < scenes.length && cur.transition === "dissolve" ? clamp((f - (m.start + m.len - XF)) / XF) : 0;
+  /* the cut: the outgoing scene is transformed away by the incoming one */
+  const into = f - m.start;
   const prevIdx = idx - 1;
-  const fromPrev = prevIdx >= 0 && scenes[prevIdx].transition === "dissolve" ? 1 - clamp((f - m.start) / XF) : 0;
+  const outState = prevIdx >= 0 ? cutState(scenes[prevIdx].transition, into, m.len) : null;
+  const inAmount = prevIdx >= 0 ? incoming(scenes[prevIdx].transition, into, m.len) : 1;
 
   return (
     <AbsoluteFill style={{ background: "#04070C" }}>
-      <AbsoluteFill style={{ opacity: Math.max(0.001, 1 - fromPrev * 0.0) }}>
-        <SceneBody scene={cur} index={idx} progress={progress} accent={accent} cta={cta} footage={footage} />
-      </AbsoluteFill>
-
-      {intoNext > 0 ? (
-        <AbsoluteFill style={{ opacity: intoNext }}>
+      {/* outgoing frame, still moving, thrown by the cut */}
+      {outState ? (
+        <AbsoluteFill
+          style={{
+            opacity: outState.opacity,
+            transform: outState.transform,
+            filter: outState.filter,
+          }}
+        >
           <SceneBody
-            scene={scenes[nextIdx]}
-            index={nextIdx}
-            progress={0.02}
+            scene={scenes[prevIdx]}
+            index={prevIdx}
+            progress={1}
             accent={accent}
             cta={cta}
             footage={footage}
@@ -308,7 +309,17 @@ export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage }
         </AbsoluteFill>
       ) : null}
 
-      <Grain opacity={0.03} />
+      {/* incoming frame */}
+      <AbsoluteFill
+        style={{
+          opacity: inAmount,
+          transform: inAmount < 1 ? `scale(${1.04 - 0.04 * inAmount})` : undefined,
+        }}
+      >
+        <SceneBody scene={cur} index={idx} progress={progress} accent={accent} cta={cta} footage={footage} />
+      </AbsoluteFill>
+
+      <Grade f={f} accent={accent} amount={0.9} vignette={0.5} />
     </AbsoluteFill>
   );
 };
