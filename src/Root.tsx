@@ -12,7 +12,7 @@ import { DEFAULT_BRIEF } from "./studio/types";
 import { ProductFilm, planProduct, planSeconds } from "./studio/premium";
 import { StoryFilm } from "./studio/StoryFilm";
 import { planStory, totalSeconds } from "./studio/story";
-import { AgentFilm, agentFrames } from "./studio/VitoFilm";
+import { VitoFilm as AgentFilm, framesFor as agentFrames } from "./studio/VitoFilm";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";

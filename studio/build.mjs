@@ -9,7 +9,12 @@ mkdirSync("studio/dist", { recursive: true });
 await esbuild.build({
   entryPoints: ["studio/app.tsx"],
   bundle: true,
-  outfile: "studio/dist/app.js",
+  // code splitting: the encoder is a separate chunk, fetched only on download.
+  // The page must be interactive before the video engine is even requested.
+  outdir: "studio/dist",
+  entryNames: "app",
+  chunkNames: "chunk-[hash]",
+  splitting: true,
   format: "esm",
   target: ["chrome110", "safari16"],
   jsx: "automatic",

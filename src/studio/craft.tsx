@@ -12,8 +12,14 @@
  *   5. Cuts that mean something: whip, match, L-cut on audio.
  */
 import React from "react";
-import { AbsoluteFill } from "remotion";
-import { clamp, hash, rgba } from "./kit";
+
+import { clamp, hash, rgba } from "./pure";
+
+/** the one thing all three of these files needed from remotion: a full-bleed box */
+const Fill: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }> = ({ style, children }) => (
+  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", ...style }}>{children}</div>
+);
+
 
 /* ------------------------------------------------------------------ easing */
 
@@ -176,7 +182,7 @@ export const Grade: React.FC<{
   return (
     <>
       {/* halation: light bleeding out of the brightest part of the frame */}
-      <AbsoluteFill
+      <Fill
         style={{
           background: `radial-gradient(ellipse 62% 42% at 50% 34%, ${rgba(accent, 0.1 * amount)}, rgba(0,0,0,0) 68%)`,
           mixBlendMode: "screen",
@@ -185,7 +191,7 @@ export const Grade: React.FC<{
       />
 
       {/* vignette, two stops so the falloff is filmic, not a circle */}
-      <AbsoluteFill
+      <Fill
         style={{
           background: `radial-gradient(ellipse 78% 58% at 50% 46%, rgba(0,0,0,0) 42%, rgba(0,0,0,${0.34 * vignette}) 76%, rgba(0,0,0,${0.72 * vignette}) 100%)`,
           pointerEvents: "none",
@@ -193,7 +199,7 @@ export const Grade: React.FC<{
       />
 
       {/* chromatic fringe at the edges — where a real lens is weakest */}
-      <AbsoluteFill
+      <Fill
         style={{
           boxShadow: `inset 0 0 120px ${rgba("#FF2D55", 0.1 * amount)}, inset 0 0 160px ${rgba("#2E7CFF", 0.08 * amount)}`,
           pointerEvents: "none",
@@ -201,7 +207,7 @@ export const Grade: React.FC<{
       />
 
       {/* grain, crawling */}
-      <AbsoluteFill
+      <Fill
         style={{
           opacity: 0.038 * amount,
           backgroundImage: "repeating-conic-gradient(#fff 0% 25%, #000 0% 50%)",

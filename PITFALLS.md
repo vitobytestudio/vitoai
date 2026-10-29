@@ -184,3 +184,37 @@ it only removes it from future serving.
   the lower third fixes it and also seats the frame.
 - **`Audio` must not receive an empty string.** `score: undefined` is fine;
   `src=""` raises a load error that surfaces as a generic render timeout.
+
+## H — the studio, and the browser it really runs in
+
+- **Arabic on a Latin stack hangs a still, twice, in silence.** First it was
+  «مشاهد» in the contents page sitting on `MONO`; later a single Arabic-Indic
+  numeral inside a `DISP` figure. Both produced the identical symptom — a 33 s
+  `waitForReady` timeout with no error in the log — and both were found by
+  rendering to string with `react-dom/server` first (fast, no browser) and then
+  grepping the HTML for Arabic next to a Latin `font-family`. Rule: every string
+  goes through `fam(rtl)` / `monoFam(rtl)`, and numerals through `rl(n, rtl)`.
+- **Bundle size is a first-paint bug, not a footnote.** 2 684 290 B of
+  `@remotion/player` + web-renderer parsed before the textarea accepted a
+  keystroke read as "the page is frozen". Fix: `splitting: true`, the encoder
+  behind `import("./exporter")`, and the maths split out of `kit.tsx` into
+  `pure.ts` so the film's own components never pull the renderer. 286 KB on the
+  first request, field focusable in 3 ms, first frame in 329 ms.
+- **Never build the soundtrack on the input path.** A 28 s stereo 48 kHz WAV is
+  ~5 MB and turns into a ~7 MB data URL; doing that inside the click handler
+  cost 1.5 s of dead UI. Build it in `requestIdleCallback`, after the picture.
+- **`@remotion/web-renderer` composites on WebGL.** In a headless sandbox with
+  no GPU the capability probe does not return false — it blocks the main
+  thread, so `await canRenderMediaOnWeb()` hangs forever behind a "rendering 0%"
+  button. Probe `VideoEncoder` + a `webgl` context yourself, synchronously, and
+  say what is missing in one sentence.
+- **The sandbox Chromium has no fonts at all** unless `FONTCONFIG_FILE` points
+  at a config that exists: `.render-tools/chromelibs/fonts.conf` lists
+  `/var/task/fonts`, which is a Lambda path. Every glyph then lays out at zero
+  height — text is invisible but present in the DOM, which reads as a CSS bug
+  and is not one. `fonts-local/fonts.conf` → `/usr/share/fonts/truetype` fixed
+  it. This matters for screenshots only, never for the delivered film: Remotion
+  embeds its own faces.
+- **Drive the browser over CDP, don't screenshot blind.** `tools/drive.mjs`
+  opens a tab, types into the field, clicks Create and photographs the result;
+  every claim about "feels instant" in this repository is measured there.

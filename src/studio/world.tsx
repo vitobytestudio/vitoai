@@ -11,8 +11,14 @@
  * windows, different traffic.
  */
 import React from "react";
-import { AbsoluteFill } from "remotion";
-import { MONO, DISP, rgba, clamp, mix } from "./kit";
+
+import { MONO, DISP, rgba, clamp, mix } from "./pure";
+
+/** the one thing all three of these files needed from remotion: a full-bleed box */
+const Fill: React.FC<{ style?: React.CSSProperties; children?: React.ReactNode }> = ({ style, children }) => (
+  <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", ...style }}>{children}</div>
+);
+
 
 /* ------------------------------------------------------------------ random */
 
@@ -72,9 +78,9 @@ export type World = {
 
 const Sky: React.FC<{ mood: Mood; p: number }> = ({ mood, p }) => (
   <>
-    <AbsoluteFill style={{ background: `linear-gradient(180deg, ${mood.sky[0]} 0%, ${mood.sky[1]} 58%, ${mood.ground} 100%)` }} />
+    <Fill style={{ background: `linear-gradient(180deg, ${mood.sky[0]} 0%, ${mood.sky[1]} 58%, ${mood.ground} 100%)` }} />
     {/* atmospheric haze hugs the horizon, which is what makes distance read */}
-    <AbsoluteFill
+    <Fill
       style={{
         background: `linear-gradient(180deg, rgba(0,0,0,0) 42%, ${rgba(mood.haze, 0.3)} 74%, ${rgba(mood.haze, 0.1)} 92%, rgba(0,0,0,0) 100%)`,
         transform: `translateY(${(p - 0.5) * 8}px)`,
@@ -117,7 +123,7 @@ const Skyline: React.FC<{ w: World }> = ({ w }) => {
   });
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden" }}>
+    <Fill style={{ overflow: "hidden" }}>
       <Sky mood={m} p={w.p} />
 
       {/* moon: one soft disc, never a graphic */}
@@ -210,7 +216,7 @@ const Skyline: React.FC<{ w: World }> = ({ w }) => {
       {/* foreground: a roof edge close to the lens, so the frame has depth */}
       <div style={{ position: "absolute", left: -60, right: -140, bottom: 0, height: 210, background: mix(m.near, "#000000", 0.55), transform: `translateY(${30 - w.p * 24}px)` }} />
       <div style={{ position: "absolute", left: -60, right: -140, bottom: 210, height: 8, background: rgba(m.warm, 0.22), filter: "blur(5px)", transform: `translateY(${30 - w.p * 24}px)` }} />
-    </AbsoluteFill>
+    </Fill>
   );
 };
 
@@ -228,7 +234,7 @@ const Haussmann: React.FC<{ w: World }> = ({ w }) => {
   const gap = 96;
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden" }}>
+    <Fill style={{ overflow: "hidden" }}>
       <Sky mood={m} p={w.p} />
 
       {/* facade block, seen from across the street: it must fill the frame */}
@@ -330,13 +336,13 @@ const Haussmann: React.FC<{ w: World }> = ({ w }) => {
           boxShadow: `0 0 140px 60px ${rgba(m.warm, 0.26)}`,
         }}
       />
-      <AbsoluteFill
+      <Fill
         style={{
           background: `radial-gradient(ellipse 60% 30% at 12% 74%, ${rgba(m.warm, 0.24)}, rgba(0,0,0,0) 70%)`,
           mixBlendMode: "screen",
         }}
       />
-    </AbsoluteFill>
+    </Fill>
   );
 };
 
@@ -350,7 +356,7 @@ const Street: React.FC<{ w: World }> = ({ w }) => {
   const lamps = [0.1, 0.34, 0.62, 0.86];
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden" }}>
+    <Fill style={{ overflow: "hidden" }}>
       <Sky mood={m} p={w.p} />
 
       {/* the horizon glow is what sells a city at night: light bouncing off haze */}
@@ -482,7 +488,7 @@ const Street: React.FC<{ w: World }> = ({ w }) => {
         <div style={{ position: "absolute", right: 14, top: 78, width: 70, height: 20, borderRadius: 7, background: "#FF3B30", boxShadow: "0 0 46px 14px rgba(255,59,48,0.6)" }} />
       </div>
       <div style={{ position: "absolute", left: 430, top: 1466, width: 330, height: 190, background: "linear-gradient(180deg, rgba(255,59,48,0.26), rgba(0,0,0,0))", filter: "blur(12px)" }} />
-    </AbsoluteFill>
+    </Fill>
   );
 };
 
@@ -521,15 +527,15 @@ const Aerial: React.FC<{ w: World }> = ({ w }) => {
   );
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden", background: mix(m.ground, "#000", 0.35) }}>
-      <AbsoluteFill
+    <Fill style={{ overflow: "hidden", background: mix(m.ground, "#000", 0.35) }}>
+      <Fill
         style={{
           transform: `scale(${zoom}) translate(${(w.p - 0.5) * -22}px, ${(w.p - 0.5) * -34}px)`,
           transformOrigin: "50% 50%",
         }}
       >
         {/* asphalt field */}
-        <AbsoluteFill style={{ background: `linear-gradient(160deg, ${mix(m.near, "#000", 0.2)}, ${mix(m.ground, "#000", 0.45)})` }} />
+        <Fill style={{ background: `linear-gradient(160deg, ${mix(m.near, "#000", 0.2)}, ${mix(m.ground, "#000", 0.45)})` }} />
 
         {blocks.map((line) =>
           line.map((b) => {
@@ -652,11 +658,11 @@ const Aerial: React.FC<{ w: World }> = ({ w }) => {
           const cy = Math.floor(r() * (ROWS + 1)) * RH;
           return <div key={i} style={{ position: "absolute", left: cx - 60, top: cy - 60, width: 120, height: 120, background: `radial-gradient(circle, ${rgba(m.warm, 0.18)}, rgba(0,0,0,0) 70%)`, pointerEvents: "none" }} />;
         })}
-      </AbsoluteFill>
+      </Fill>
 
       {/* a single warm wash from one side, so the frame is lit and not flat */}
-      <AbsoluteFill style={{ background: `linear-gradient(120deg, ${rgba(m.warm, 0.08)}, rgba(0,0,0,0) 46%, ${rgba(m.haze, 0.1)})`, mixBlendMode: "screen" }} />
-    </AbsoluteFill>
+      <Fill style={{ background: `linear-gradient(120deg, ${rgba(m.warm, 0.08)}, rgba(0,0,0,0) 46%, ${rgba(m.haze, 0.1)})`, mixBlendMode: "screen" }} />
+    </Fill>
   );
 };
 
@@ -668,7 +674,7 @@ const Mall: React.FC<{ w: World }> = ({ w }) => {
   const shops = 4;
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden", background: `linear-gradient(180deg, #121A25, #080D14)` }}>
+    <Fill style={{ overflow: "hidden", background: `linear-gradient(180deg, #121A25, #080D14)` }}>
       {/* glass barrel roof, backlit: the ceiling is the light source */}
       <div
         style={{
@@ -754,8 +760,8 @@ const Mall: React.FC<{ w: World }> = ({ w }) => {
         );
       })}
 
-      <AbsoluteFill style={{ background: `radial-gradient(ellipse 72% 44% at 50% 22%, ${rgba(m.warm, 0.14)}, rgba(0,0,0,0) 68%)`, mixBlendMode: "screen" }} />
-    </AbsoluteFill>
+      <Fill style={{ background: `radial-gradient(ellipse 72% 44% at 50% 22%, ${rgba(m.warm, 0.14)}, rgba(0,0,0,0) 68%)`, mixBlendMode: "screen" }} />
+    </Fill>
   );
 };
 
@@ -767,9 +773,9 @@ const Showroom: React.FC<{ w: World }> = ({ w }) => {
   const hues = [w.accent, mix(w.accent, "#FFFFFF", 0.35), mix(w.accent, "#000000", 0.4), "#E8E2D6", "#2A3340"];
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden", background: "linear-gradient(180deg, #0A0F16, #05080D 62%, #03060A)" }}>
+    <Fill style={{ overflow: "hidden", background: "linear-gradient(180deg, #0A0F16, #05080D 62%, #03060A)" }}>
       {/* back wall with a light pool */}
-      <AbsoluteFill style={{ background: `radial-gradient(ellipse 52% 40% at 50% 30%, ${rgba(w.accent, 0.2)}, rgba(0,0,0,0) 68%)` }} />
+      <Fill style={{ background: `radial-gradient(ellipse 52% 40% at 50% 30%, ${rgba(w.accent, 0.2)}, rgba(0,0,0,0) 68%)` }} />
 
       {/* spotlights: cones, not circles */}
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: 0.5 }}>
@@ -819,7 +825,7 @@ const Showroom: React.FC<{ w: World }> = ({ w }) => {
       <div style={{ position: "absolute", left: 0, right: 0, top: 1290, bottom: 0, background: "linear-gradient(180deg, rgba(18,25,35,0.95), #04070B)" }} />
       <div style={{ position: "absolute", left: 90, right: 90, top: 1290, height: 240, background: `linear-gradient(180deg, ${rgba(w.accent, 0.16)}, rgba(0,0,0,0))`, filter: "blur(14px)", transform: `scaleY(${1 + w.p * 0.1})` }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: 1290, height: 1, background: "rgba(200,220,255,0.22)" }} />
-    </AbsoluteFill>
+    </Fill>
   );
 };
 
@@ -831,9 +837,9 @@ const Plan: React.FC<{ w: World }> = ({ w }) => {
   const line = rgba("#A8D4FF", 0.82);
 
   return (
-    <AbsoluteFill style={{ overflow: "hidden", background: paper }}>
+    <Fill style={{ overflow: "hidden", background: paper }}>
       {/* drafting grid */}
-      <AbsoluteFill
+      <Fill
         style={{
           backgroundImage: `linear-gradient(${rgba("#8FC4FF", 0.14)} 1px, transparent 1px), linear-gradient(90deg, ${rgba("#8FC4FF", 0.14)} 1px, transparent 1px)`,
           backgroundSize: "36px 36px",
@@ -906,7 +912,7 @@ const Plan: React.FC<{ w: World }> = ({ w }) => {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} style={{ position: "absolute", left: 120 + r() * 800, top: 420 + r() * 900, width: 5, height: 5, background: rgba(w.accent, 0.8), borderRadius: 99 }} />
       ))}
-    </AbsoluteFill>
+    </Fill>
   );
 };
 
@@ -924,9 +930,9 @@ const RENDER: Record<WorldKind, React.FC<{ w: World }>> = {
 export const World: React.FC<{ spec: World }> = ({ spec }) => {
   const C = RENDER[spec.kind] || Skyline;
   return (
-    <AbsoluteFill>
+    <Fill>
       <C w={spec} />
-    </AbsoluteFill>
+    </Fill>
   );
 };
 

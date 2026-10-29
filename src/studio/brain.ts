@@ -35,6 +35,8 @@ export type Beat = {
   caption?: string;
   line?: string;
   transition: "cut" | "dissolve" | "whip" | "match" | "dip";
+  /** a page chosen by the director rather than by the hash */
+  arch?: string;
 };
 
 export type Reason = { call: string; because: string };
@@ -63,6 +65,17 @@ export type Decision = {
   voice: string[];
   reasons: Reason[];
   seed: number;
+  /** the film's idea, one sentence */
+  concept?: string;
+  /** who wrote the copy — shown to the user, never the model's name */
+  by?: "director" | "planner";
+  /** the full direction the director returned, kept for the panel */
+  direction?: {
+    palette: string;
+    visual?: string;
+    beats: { i: number; label: string; line: string; visual: string; arch: string }[];
+    ms?: number;
+  };
 };
 
 /* --------------------------------------------------------------- reading */
