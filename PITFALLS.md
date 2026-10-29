@@ -138,3 +138,25 @@ it only removes it from future serving.
 - **Never let a repair drop copy silently.** The headline re-wrap once sliced to
   three lines and discarded the rest without saying so. Every edit must be logged
   with what was held back.
+
+## F — sound (Oct 2026)
+
+- **A silent render is not a deliverable.** The product film shipped without an
+  audio stream and immediately read as a downgrade, because it was one. Every
+  delivery now runs through `studio/make-film.sh`, which generates the score,
+  merges it and normalises to -14 LUFS in the same command.
+- **Sound and picture must share one source of truth.** The score generator
+  reads the cue sheet that the picture is cut from (`cueSheet()` in
+  `src/studio/productplan.ts`). When the two were separate, cuts and impacts had
+  different timings; now a change to a beat's duration moves both.
+- **Verify the mix by looking at it.** `showspectrumpic` and `showwavespic`
+  reveal what ears miss on a laptop: no impacts on the cuts, a riser that never
+  arrives, a bed with no harmonic movement. The spectrum should show pads
+  changing with each act, vertical lines exactly on the cuts, and a rising curve
+  before the biggest beat.
+- **Software clipping is free and better than a limiter here.** `tanh(x * 1.15)`
+  before normalising keeps the transients musical; a hard limiter made the
+  impacts sound like a compressor was pumping.
+- **Three libraries will be reached for and none is needed.** Sine + noise +
+  envelope is a complete sound design toolkit at 48 kHz; 23 s of stereo score
+  synthesises in half a second.
