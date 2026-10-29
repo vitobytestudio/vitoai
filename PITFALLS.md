@@ -243,3 +243,26 @@ it only removes it from future serving.
 - **A blank studio is a template.** The empty state renders three real beats of a
   real film, each labelled with the page architecture it actually got, computed
   from `chooseArch` rather than typed by hand.
+
+## Spot pass — what actually broke (36 s Vito Byte film)
+
+- **A link is invisible if its opacity is the product of two small numbers.**
+  `near = (1 - len/420) * cl((1500 - d)/1100)` topped out around 0.13, then
+  multiplied again by a pulse of ~0.4 → alpha 0.05 on a dark frame. The lattice
+  rendered as loose dots with no edges. Rule for line work: compute one
+  visibility term in the 0..1 range, and make the *weakest* case still ≥0.25.
+- **`placeContent: center` on a wrapper is not inherited by an absolutely
+  positioned child.** The drop cards sat top-left for a whole render because the
+  body was inside `position:absolute; inset:0` with only a transform. Centering
+  belongs on the element that actually holds the content.
+- **A "whip" driven by `f % 60` fires on every bar, not on every cut.** Bar
+  lines and cuts are not the same list once a film has sections that are not 2 s
+  long. Keep an explicit `CUTS` array and derive both the shake and the flash
+  from it.
+- **`-shortest` with `-c:v copy` does not trim the audio.** The mux kept 0.86 s
+  of tail past the last picture frame. Add `-t <picture length>` on the mux.
+- **A panel that is 1060 px tall with 800 px of content reads as broken.** Size
+  the glass to the content (916 px here) instead of padding it with `margin:auto`.
+- **Freezing a descending counter at a value the slate does not agree with is
+  the fastest way to look careless.** Every displayed number must be derived
+  from one source of truth.
