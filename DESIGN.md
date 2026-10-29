@@ -67,3 +67,46 @@ is B, C, I flat and the swarm trilogy as the only 3D.
 - A whip on every cut. It stops reading as speed and starts reading as a fault.
 - HUD rails on every frame — decoration pretending to be information.
 - 3D on a logotype. A wordmark is flat by definition; extruding it is a fad.
+
+## The eleven pages
+
+Every beat is drawn by one of eleven page architectures. The set is the product:
+it is why two briefs never produce the same film, and why a beat that has
+nothing to say can be given a page that says nothing on purpose.
+
+| id | the page | it is for | it never does |
+|---|---|---|---|
+| `poster` | one place, full bleed, type in the lower third | a place that needs stating | carry two ideas |
+| `editorial` | the place behind an oversized index numeral, copy in a column | the argument of the film | use the numeral as decoration |
+| `silent` | no copy at all, one mark, one travelling hairline | a place that can hold a frame alone | fill the silence |
+| `index` | a contents page listing the film's own chapters | proof, abundance, a record | repeat a chapter name |
+| `stack` | one word per line at 132 px, clipped reveal | a declaration | be subtle |
+| `metric` | a 340 px figure, its unit, one hairline | a number that matters | show a number that does not |
+| `grid` | four micro-scenes at once | evidence by quantity | show the same frame twice |
+| `diptych` | place above, colour field below holding the line | a considered statement | echo `silent` |
+| `caption` | broadcast lower third with a timecode | reportage, a place with a story | pretend to be editorial |
+| `marquee` | type crossing the frame | momentum, an ending in motion | be readable in one glance |
+| `signature` | the closing card | the last four seconds | ever move |
+
+Casting rules:
+
+- the hook is `stack`, `poster` or `editorial`;
+- a place is `silent`, `caption`, `diptych` or `poster`;
+- evidence is `grid`, `index` or `marquee`;
+- a number is `metric` (a figure with no page is a missed beat);
+- the end is always `signature`.
+
+Two consecutive beats are never the same page, and a page chosen by the
+director is checked against the same rule before it is honoured.
+
+## Typography and colour in the pages
+
+- One scale with real jumps: 118 / 92 / 64 / 46 / 28 / 13 px at 1080 wide.
+  Nothing in between; intermediate sizes are what makes a layout look amateur.
+- Numerals are `rl()`-converted in Arabic films, so a figure and its label are
+  written in one script.
+- Colour is a key, chosen once per film (green, blue, amber, violet, ice), then
+  the beats alternate temperature: odd beats take the accent, even beats take
+  `#2E63FF` at 11% in `screen`. The palette breathes instead of repeating.
+- Grain is 0.019, never on every cut. A vignette is 0.42. Nothing else is added
+  for texture; the geometry is the texture.

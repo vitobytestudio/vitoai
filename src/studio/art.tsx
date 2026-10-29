@@ -168,7 +168,7 @@ const Editorial: React.FC<ArtProps & { index?: number }> = ({ beat, plan, f, tot
   return (
     <div style={{ position: "absolute", inset: 0, background: tok.bg }}>
       {/* the place, full bleed, pushed back so type sits in front of it */}
-      <div style={{ position: "absolute", inset: 0, opacity: 0.55 }}>
+      <div style={{ position: "absolute", inset: 0, opacity: 0.74 }}>
         <div style={{ position: "absolute", width: 1080, height: 1920, transform: `scale(${k})`, transformOrigin: "0 0" }}>
           <World spec={worldSpec({ ...beat, world: beat.world || "skyline" }, plan, f, total)} />
         </div>
@@ -252,7 +252,9 @@ const Index: React.FC<ArtProps> = ({ plan, f, k }) => {
         <span style={{ fontFamily: monoFam(rtl), fontSize: 13 * k, letterSpacing: rtl ? 0 : "0.34em", color: plan.accent, textTransform: "uppercase" }}>{rtl ? "المحتوى" : "contents"}</span>
         <span style={{ fontFamily: monoFam(rtl), fontSize: 12 * k, letterSpacing: rtl ? 0 : "0.2em", color: tok.faint }}>{rl(plan.beats.length, rtl)} {rtl ? "مشاهد" : "beats"}</span>
       </div>
-      <div style={{ position: "absolute", left: M * k, right: M * k, top: 300 * k }}>
+      {/* a rail down the page, so the list is a page and not a table */}
+      <div style={{ position: "absolute", left: M * k - 26 * k, top: 300 * k, bottom: 240 * k, width: 1, background: `linear-gradient(180deg, ${rgba(plan.accent, 0.5)}, rgba(255,255,255,0.06))` }} />
+      <div style={{ position: "absolute", left: M * k, right: M * k, top: 330 * k }}>
         {rows.map((b, i) => {
           const at = 8 + i * 7;
           const p = EASE.out((f - at) / 18);
@@ -264,14 +266,14 @@ const Index: React.FC<ArtProps> = ({ plan, f, k }) => {
                 display: "flex",
                 alignItems: "baseline",
                 gap: 20 * k,
-                padding: `${24 * k}px 0`,
+                padding: `${34 * k}px 0`,
                 borderBottom: `1px solid ${tok.hair2}`,
                 opacity: p,
                 transform: `translateY(${(1 - p) * 16 * k}px)`,
               }}
             >
               <span style={{ fontFamily: MONO, fontSize: 12 * k, color: tok.faint, width: 32 * k, flex: "0 0 32px" }}>{String(i + 1).padStart(2, "0")}</span>
-              <span style={{ fontFamily: fam(rtl), fontSize: 46 * k, lineHeight: 1.1, fontWeight: 600, color: last ? tok.dim : tok.ink, flex: 1, direction: rtl ? "rtl" : "ltr" }}>
+              <span style={{ fontFamily: fam(rtl), fontSize: 54 * k, lineHeight: 1.1, fontWeight: 600, color: last ? tok.dim : tok.ink, flex: 1, direction: rtl ? "rtl" : "ltr" }}>
                 {beatLabel(b, rtl)}
               </span>
               <span style={{ fontFamily: MONO, fontSize: 11 * k, letterSpacing: "0.14em", color: rgba(plan.accent, 0.65), textTransform: "uppercase", flex: "0 0 auto" }}>
@@ -320,30 +322,39 @@ const Stack: React.FC<ArtProps> = ({ plan, f, k, beat }) => {
   );
 };
 
-/** 06 — METRIC. A single figure, its unit, and the smallest possible label. */
-const Metric: React.FC<ArtProps> = ({ plan, f, k }) => {
+/** 06 — METRIC. A real figure, its unit, a hairline. Never an invented number. */
+const Metric: React.FC<ArtProps> = ({ beat, plan, f, k }) => {
   const tok = tokens(plan);
   const rtl = plan.language === "ar";
-  const v = rtl ? "٩٩.٩" : "99.9";
   const p = EASE.out((f - 6) / 24);
+
+  // a figure only appears if the brief actually contains one
+  const source = `${beat.line || ""} ${plan.headline} ${plan.sub} ${beat.caption || ""}`;
+  const found = source.match(/(\d[\d.,]*)\s*([%+×x]|[A-Za-z\u0600-\u06FF]{1,6})?/);
+  const figure = found ? found[1] : "";
+  const unit = found && found[2] ? found[2] : "";
+
   return (
     <div style={{ position: "absolute", inset: 0, background: tok.bg }}>
       <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse 70% 40% at 50% 60%, ${rgba(plan.accent, 0.1)}, rgba(0,0,0,0) 70%)` }} />
-      <div style={{ position: "absolute", left: M * k, right: M * k, top: 430 * k, opacity: p }}>
-        <div style={{ fontFamily: fam(rtl), fontSize: 340 * k, lineHeight: 0.86, fontWeight: 700, letterSpacing: "-0.06em", color: tok.ink, transform: `translateY(${(1 - p) * 30 * k}px)` }}>
-          {v}
-          <span style={{ fontSize: 96 * k, color: plan.accent, marginLeft: 12 * k }}>%</span>
-        </div>
+      <div style={{ position: "absolute", left: M * k, right: M * k, top: figure ? 430 * k : 520 * k, opacity: p }}>
+        {figure ? (
+          <div style={{ fontFamily: fam(rtl), fontSize: 320 * k, lineHeight: 0.86, fontWeight: 700, letterSpacing: "-0.05em", color: tok.ink, transform: `translateY(${(1 - p) * 30 * k}px)` }}>
+            {rl(Number(figure.replace(/[.,]/g, "")) || 0, rtl)}
+            <span style={{ fontFamily: fam(rtl), fontSize: 96 * k, color: plan.accent, marginLeft: 14 * k }}>{unit}</span>
+          </div>
+        ) : (
+          <div style={{ fontFamily: fam(rtl), fontSize: 112 * k, lineHeight: 1.1, fontWeight: 700, letterSpacing: rtl ? 0 : "-0.03em", color: tok.ink, direction: rtl ? "rtl" : "ltr", transform: `translateY(${(1 - p) * 30 * k}px)` }}>
+            {beat.line || plan.headline}
+          </div>
+        )}
         <div style={{ height: 1, background: tok.hair, marginTop: 40 * k, transform: `scaleX(${p})`, transformOrigin: "0 50%" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 22 * k }}>
-          <span style={{ fontFamily: monoFam(rtl), fontSize: 15 * k, letterSpacing: rtl ? 0 : "0.28em", color: tok.dim, textTransform: "uppercase" }}>
-            {rtl ? "الاستقرار · ١٢ شهراً" : "uptime · twelve months"}
+        <div style={{ marginTop: 26 * k, display: "flex", alignItems: "center", gap: 14 * k }}>
+          <span style={{ width: 6 * k, height: 6 * k, borderRadius: 99, background: plan.accent }} />
+          <span style={{ fontFamily: monoFam(rtl), fontSize: 13 * k, letterSpacing: rtl ? 0 : "0.28em", textTransform: "uppercase", color: tok.dim }}>
+            {beat.caption || beatLabel(beat, rtl)}
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 15 * k, color: tok.faint }}>2026</span>
         </div>
-      </div>
-      <div style={{ position: "absolute", left: M * k, bottom: 200 * k, fontFamily: fam(rtl), fontSize: 30 * k, color: tok.dim, direction: rtl ? "rtl" : "ltr", maxWidth: 700 * k, opacity: clamp((f - 20) / 20) }}>
-        {plan.sub}
       </div>
     </div>
   );
@@ -353,42 +364,62 @@ const Metric: React.FC<ArtProps> = ({ plan, f, k }) => {
 const Grid4: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
   const tok = tokens(plan);
   const rtl = plan.language === "ar";
-  const cells = [0, 1, 2, 3];
+  const worlds = ["haussmann", "street", "skyline", "showroom"] as const;
+  const GAP = 20;
+  const cw = (1080 - M * 2 - GAP) / 2;
+  const ch = (1920 - 180 - GAP - 220) / 2;
+  // four crops, not four copies: each cell looks at its place differently
+  // four whole frames, shrunk — a storyboard, not four copies of one shot
+  const crop = { s: cw / 1080, y: 0 };
   return (
     <div style={{ position: "absolute", inset: 0, background: tok.bg }}>
-      {cells.map((i) => {
+      <div style={{ position: "absolute", left: M * k, top: 96 * k, right: M * k, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+        <span style={{ fontFamily: fam(rtl), fontSize: 26 * k, fontWeight: 600, color: tok.ink, direction: rtl ? "rtl" : "ltr" }}>{beat.caption || beatLabel(beat, rtl)}</span>
+        <span style={{ fontFamily: MONO, fontSize: 11 * k, letterSpacing: "0.24em", color: tok.faint }}>{rl(4, rtl)} {rtl ? "لقطات" : "cuts"}</span>
+      </div>
+      {worlds.map((w, i) => {
         const col = i % 2;
         const row = Math.floor(i / 2);
-        const p = EASE.out((f - 6 - i * 5) / 20);
-        const cw = (1080 - M * 2 - 24) / 2;
-        const ch = 560;
+        const p = EASE.out((f - 3 - i * 3) / 16);
         return (
           <div
             key={i}
             style={{
               position: "absolute",
-              left: (M + col * (cw + 24)) * k,
-              top: (250 + row * (ch + 24)) * k,
+              left: (M + col * (cw + GAP)) * k,
+              top: (180 + row * (ch + GAP)) * k,
               width: cw * k,
               height: ch * k,
               overflow: "hidden",
-              borderRadius: 4 * k,
               opacity: p,
-              transform: `translateY(${(1 - p) * 18 * k}px)`,
+              transform: `translateY(${(1 - p) * 20 * k}px) scale(${1.02 - 0.02 * p})`,
             }}
           >
-            <div style={{ position: "absolute", width: 1080, height: 1920, transform: `scale(${(cw * k) / 1080})`, transformOrigin: "0 0" }}>
-              <World spec={worldSpec({ ...beat, world: (["haussmann", "street", "skyline", "showroom"] as const)[i] }, plan, f + i * 12, total)} />
+            <div
+              style={{
+                position: "absolute",
+                width: 1080,
+                height: 1920,
+                transform: `scale(${crop.s * k})`,
+                transformOrigin: "0 0",
+                top: -crop.y * k,
+                filter: "brightness(1.16) contrast(1.04)",
+              }}
+            >
+              <World spec={worldSpec({ ...beat, world: w }, plan, f + i * 6, total)} />
             </div>
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(4,7,11,0.88))" }} />
-            <div style={{ position: "absolute", left: 18 * k, bottom: 16 * k, fontFamily: monoFam(rtl), fontSize: 12 * k, letterSpacing: rtl ? 0 : "0.24em", color: tok.dim, textTransform: "uppercase" }}>
-              {String(i + 1).padStart(2, "0")} · {(["facade", "avenue", "skyline", "rail"] as const)[i]}
-            </div>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,7,11,0) 62%, rgba(4,7,11,0.78))" }} />
+            <span style={{ position: "absolute", left: 14 * k, bottom: 12 * k, fontFamily: MONO, fontSize: 10 * k, letterSpacing: "0.22em", color: "rgba(238,244,251,0.55)" }}>
+              {String(i + 1).padStart(2, "0")} · {w}
+            </span>
           </div>
         );
       })}
-      <div style={{ position: "absolute", left: M * k, right: M * k, top: 170 * k, fontFamily: fam(rtl), fontSize: 44 * k, fontWeight: 700, color: tok.ink, direction: rtl ? "rtl" : "ltr", opacity: clamp(f / 16) }}>
-        {beat.caption || plan.sub}
+      <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 150 * k }}>
+        <div style={{ height: 1, background: tok.hair2, marginBottom: 22 * k }} />
+        <span style={{ fontFamily: fam(rtl), fontSize: 34 * k, lineHeight: 1.5, color: tok.dim, direction: rtl ? "rtl" : "ltr" }}>
+          {beat.line || plan.sub}
+        </span>
       </div>
     </div>
   );
@@ -494,18 +525,40 @@ const Caption: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
 const Marquee: React.FC<ArtProps> = ({ plan, f, k, beat }) => {
   const tok = tokens(plan);
   const rtl = plan.language === "ar";
-  const line = (beat.caption || plan.sub).toUpperCase();
-  const shift = (f * 2.4) % 360;
+  const word = (beat.caption || plan.kicker || plan.sub).toUpperCase();
+  const row = (rev: boolean, size: number, tone: string, speed: number, glyph: string) => {
+    const travel = (f * speed) % 100;
+    const strip = Array.from({ length: 6 }, () => word).join(glyph);
+    return (
+      <div
+        style={{
+          whiteSpace: "nowrap",
+          fontFamily: fam(rtl),
+          fontSize: size * k,
+          fontWeight: 700,
+          letterSpacing: rtl ? 0 : "-0.03em",
+          color: tone,
+          transform: `translateX(${(rev ? travel : -travel) * 12}px)`,
+          direction: rtl ? "rtl" : "ltr",
+        }}
+      >
+        {strip}
+      </div>
+    );
+  };
   return (
     <div style={{ position: "absolute", inset: 0, background: tok.bg, overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 780 * k, left: -shift * k, whiteSpace: "nowrap", fontFamily: fam(rtl), fontSize: 120 * k, fontWeight: 700, letterSpacing: rtl ? 0 : "-0.04em", color: "rgba(238,244,251,0.1)" }}>
-        {line} · {line} · {line}
+      <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(5,8,12,0.9), rgba(5,8,12,0) 30%, rgba(5,8,12,0) 70%, rgba(5,8,12,0.92))`, zIndex: 2 }} />
+      <div style={{ position: "absolute", top: 660 * k, left: 0, right: 0, display: "grid", gap: 10 * k }}>
+        {row(false, 118, rgba(tok.ink, 0.13), 2.6, " · ")}
+        {row(true, 118, plan.accent, 3.4, " · ")}
+        {row(false, 118, rgba(tok.ink, 0.13), 2.0, " · ")}
       </div>
-      <div style={{ position: "absolute", top: 940 * k, left: shift * k - 400 * k, whiteSpace: "nowrap", fontFamily: fam(rtl), fontSize: 120 * k, fontWeight: 700, letterSpacing: rtl ? 0 : "-0.04em", color: rgba(plan.accent, 0.85) }}>
-        {line}
-      </div>
-      <div style={{ position: "absolute", left: M * k, bottom: 220 * k, fontFamily: fam(rtl), fontSize: 34 * k, color: tok.dim, direction: rtl ? "rtl" : "ltr", maxWidth: 620 * k }}>
-        {plan.headline.replace(/\n/g, " ")}
+      <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 250 * k, zIndex: 3, direction: rtl ? "rtl" : "ltr" }}>
+        <div style={{ width: 64 * k, height: 3, background: plan.accent, marginBottom: 24 * k }} />
+        <div style={{ fontFamily: fam(rtl), fontSize: 54 * k, lineHeight: 1.16, fontWeight: 600, color: tok.ink }}>
+          {beat.line || plan.headline.replace(/\n/g, " ")}
+        </div>
       </div>
     </div>
   );
@@ -563,7 +616,7 @@ const CAST: Record<Beat["kind"], ArchId[]> = {
   place: ["silent", "caption", "diptych", "poster"],
   evidence: ["grid", "index", "marquee"],
   detail: ["diptych", "caption"],
-  number: ["metric", "editorial"],
+  number: ["stack", "metric"],
   end: ["signature"],
 };
 
@@ -672,7 +725,7 @@ export const FilmFrame: React.FC<{ plan: Decision; frame: number; w: number; h: 
         }}
       />
 
-      <Grade f={frame} accent={plan.accent} amount={0.5} vignette={0.42} />
+      <Grade f={frame} accent={plan.accent} amount={0.5} vignette={0.3} />
 
       {/* the rail: pagination, always on, always quiet */}
       <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 44 * k, display: "flex", alignItems: "center", gap: 12 * k, opacity: 0.85 }}>
