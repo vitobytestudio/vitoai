@@ -9,12 +9,14 @@
  * missing the scene still renders — as a generated gradient field — so a failed
  * generation never produces a broken film.
  */
-import React from "react";
+import React, { useMemo } from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { Storyboard, Scene as SceneT, totalSeconds } from "./story";
 import { designById } from "./registry";
 import { Grain, Mark, MONO, DISP, DW, DH, rgba, clamp, win, hash, PAD, mix } from "./kit";
 import { Grade, cutState, incoming, display, EASE } from "./craft";
+import { World, worldFor } from "./world";
+import { composeFilm, worldSpec, Decor, Look } from "./library";
 
 export type StoryProps = Storyboard & {
   /** scene index → image url (data: or remote) */
@@ -27,51 +29,45 @@ export type StoryProps = Storyboard & {
 /** slow camera move over a still — the thing that makes a photo feel shot */
 const KenBurns: React.FC<{
   src?: string;
-  motion: NonNullable<SceneT["motion"]>;
   p: number;
   accent: string;
   seed: number;
-}> = ({ src, motion, p, accent, seed }) => {
-  const s = 1.06 + 0.1 * p;
-  const tx = motion === "pan-left" ? -3.4 * p * 100 : motion === "pan-right" ? 3.4 * p * 100 : 0;
-  const ty = motion === "in" ? 1.6 * p * 100 : motion === "out" ? -1.6 * p * 100 : 0;
-  const scale = motion === "out" ? 1.16 - 0.1 * p : s;
+  text?: string;
+  look?: Look;
+}> = ({ src, p, accent, seed, text, look }) => {
+  const cam = look?.camera;
+  const scale = cam ? cam.scale[0] + (cam.scale[1] - cam.scale[0]) * p : 1.06 + 0.1 * p;
+  const sx = cam ? cam.shift[0] + (cam.shift[1] - cam.shift[0]) * p : 0;
+  const sy = cam ? cam.shift[1] * 0 : 0;
+  const tilt = cam?.tilt ? cam.tilt[0] + (cam.tilt[1] - cam.tilt[0]) * p : 0;
 
   return (
     <AbsoluteFill style={{ overflow: "hidden", background: "#05080D" }}>
-      {src ? (
-        <img
-          src={src}
-          alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transform: `scale(${scale}) translate(${tx / 10}%, ${ty / 10}%)`,
-            transformOrigin: "50% 50%",
-            filter: "saturate(0.92) contrast(1.06)",
-          }}
-        />
-      ) : (
-        /* no still yet: a field in the accent, so the cut still works */
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: `radial-gradient(ellipse 90% 70% at ${20 + (seed % 5) * 15}% ${30 + (seed % 3) * 12}%, ${rgba(
-              accent,
-              0.34,
-            )} 0%, rgba(5,8,13,0) 62%), linear-gradient(160deg, #071019, #04070C 70%)`,
-          }}
-        />
-      )}
-      {/* grade: a vignette and a faint accent wash keep every shot in the same film */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          transform: `scale(${scale}) translate(${sx}%, ${sy}%) rotate(${tilt}deg)`,
+          transformOrigin: "50% 50%",
+        }}
+      >
+        {src ? (
+          <img
+            src={src}
+            alt=""
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", filter: "saturate(0.94) contrast(1.05)" }}
+          />
+        ) : (
+          /* no still: the place is built from code, never generated */
+          <World spec={look ? worldSpec(look, p, text || "") : worldFor(text || "", seed, accent, p)} />
+        )}
+      </div>
+
+      {/* the same grade on every shot is what makes six places one film */}
       <AbsoluteFill
         style={{
-          background: `radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 34%, rgba(0,0,0,0.52) 82%),
-                       linear-gradient(180deg, ${rgba(accent, 0.06)}, rgba(0,0,0,0) 40%, rgba(0,0,0,0.34))`,
+          background: `radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 34%, rgba(0,0,0,0.5) 82%),
+                       linear-gradient(180deg, ${rgba(accent, 0.05)}, rgba(0,0,0,0) 40%, rgba(0,0,0,0.32))`,
         }}
       />
     </AbsoluteFill>
@@ -116,11 +112,19 @@ const SceneBody: React.FC<{
   accent: string;
   cta: string;
   footage?: Record<string, string>;
-}> = ({ scene, index, progress, accent, cta, footage }) => {
+  look?: Look;
+}> = ({ scene, index, progress, accent, cta, footage, look }) => {
   if (scene.kind === "image") {
     return (
       <>
-        <KenBurns src={footage?.[String(index)]} motion={scene.motion || "in"} p={progress} accent={accent} seed={index} />
+        <KenBurns
+          src={footage?.[String(index)]}
+          p={progress}
+          accent={accent}
+          seed={index + 1}
+          text={`${scene.shot || ""} ${scene.caption || ""}`}
+          look={look}
+        />
         {scene.caption ? <Caption text={scene.caption} on={win(progress * 100, 12, 34)} accent={accent} /> : null}
       </>
     );
@@ -260,8 +264,14 @@ const SceneBody: React.FC<{
 
 /* -------------------------------------------------------------------------- */
 
-export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage }) => {
+export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage, title, logline }) => {
   const f = useCurrentFrame();
+  /* one composition per film: the library decides which place, lens and motif
+     each beat gets, and refuses to repeat itself inside the same film */
+  const comp = useMemo(
+    () => composeFilm({ title: title || "", logline: logline || "", accent, cta, scenes }, `${title || ""}|${logline || ""}|${scenes.length}|${accent}`),
+    [title, logline, accent, cta, scenes],
+  );
   const { fps } = useVideoConfig();
 
   /* scene boundaries in frames */
@@ -302,9 +312,10 @@ export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage }
             scene={scenes[prevIdx]}
             index={prevIdx}
             progress={1}
-            accent={accent}
+            accent={comp.looks[prevIdx]?.accent || accent}
             cta={cta}
             footage={footage}
+            look={comp.looks[prevIdx]}
           />
         </AbsoluteFill>
       ) : null}
@@ -316,8 +327,15 @@ export const StoryFilm: React.FC<StoryProps> = ({ scenes, accent, cta, footage }
           transform: inAmount < 1 ? `scale(${1.04 - 0.04 * inAmount})` : undefined,
         }}
       >
-        <SceneBody scene={cur} index={idx} progress={progress} accent={accent} cta={cta} footage={footage} />
+        <SceneBody scene={cur} index={idx} progress={progress} accent={comp.looks[idx]?.accent || accent} cta={cta} footage={footage} look={comp.looks[idx]} />
       </AbsoluteFill>
+
+      {/* the director's motif: on some beats, never on all of them */}
+      {comp.looks[idx]?.decor && comp.looks[idx].decor !== "none" ? (
+        <AbsoluteFill style={{ pointerEvents: "none" }}>
+          <Decor kind={comp.looks[idx].decor} accent={comp.looks[idx].accent} f={f} strength={0.8} />
+        </AbsoluteFill>
+      ) : null}
 
       <Grade f={f} accent={accent} amount={0.9} vignette={0.5} />
     </AbsoluteFill>

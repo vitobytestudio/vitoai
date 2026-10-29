@@ -91,40 +91,30 @@ On deploy you get two endpoints:
 | Endpoint | Does | Model |
 |---|---|---|
 | `POST /api/plan` | brief → storyboard JSON | Llama 3.1 8B |
-| `POST /api/shot` | prompt → 1024px JPEG | FLUX.1 schnell |
-| `POST /api/review` | image → score, problems, fix | Llama 3.2 11B Vision |
 | `GET /api/health` | reports whether AI is bound | — |
+
+Only the *plan* uses a model. Everything you see after it is built in the
+browser from geometry — there is no image endpoint, because a place built from
+code can be any place, at any hour, from any angle, for nothing.
 
 ### The loop
 
-The studio does not fire one request and present the result. It runs the same
-loop a person with tools runs:
-
 ```
-plan → shoot → LOOK AT IT → judge against the brief → correct the prompt → shoot again
+plan → compose → LOOK AT IT → judge → fix → look again
 ```
 
-`/api/review` returns a score, a list of problems and a one-line photographic
-correction. If the score is under 70 the client appends the correction to the
-prompt and shoots once more, keeping whichever frame scored higher. Every step
-is printed in the "what the agent did" panel, so the reasoning is visible
-instead of hidden.
+The plan may come from a model or from the built-in planner. Then the studio
+composes the film from the library, reviews it in plain arithmetic
+(`src/studio/critic.ts`) and repairs what is wrong: caption too long, headline
+overflowing the frame, three identical beats in a row, the same cut three times,
+an accent that fails contrast, a film over budget.
 
-Two attempts is deliberate. It catches the common failures — a rendered-looking
-frame, an empty street, a distorted facade — without turning a 30-second film
-into a five-minute bill.
+Two rounds, then it stops. The first round fixes what is obviously broken; the
+second catches what the first fix broke — which is how the logo card was caught
+being trimmed below its own minimum. Both rounds print into the "what the agent
+did" panel, so nothing about the process is hidden.
 
-**Free tier: 10,000 neurons/day, no card.** That is roughly 600 plan calls, or
-~250 stills, or ~120 stills with the critic enabled (it adds a vision call per
-shot). The critic toggle in the UI turns it off if the day's budget is short. When the day's budget runs out the endpoints return an
-error and the studio falls back to its built-in planner and generated fields —
-**films still get made, they just stop using the model.**
-
-To run with no AI at all, delete the `[ai]` block and redeploy. `/api/health`
-will report `ai: false` and the UI will say "rules engine" instead of
-"agent online".
-
-### Why the video is still not rendered on the server
+## Why the video is still not rendered on the server
 
 The agent plans and shoots *stills*. The film — cuts, camera moves, type,
 transitions — is assembled and encoded in the browser. A server-side video

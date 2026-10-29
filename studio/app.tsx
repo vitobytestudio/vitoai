@@ -20,7 +20,7 @@ import { compileBrief, EXAMPLES } from "../src/studio/brief";
 import { renderOverlay, download, OverlayOptions } from "./overlay";
 import { StoryFilm } from "../src/studio/StoryFilm";
 import { planStory, totalSeconds, Storyboard } from "../src/studio/story";
-import { planWithAI, shootAll, aiHealth, preview, Trace } from "./ai";
+import { planWithAI, buildFilm, preview, Trace } from "./ai";
 
 /* ------------------------------------------------------------------ config */
 
@@ -109,7 +109,6 @@ const App: React.FC = () => {
   const [shotP, setShotP] = useState({ done: 0, total: 0 });
   const [via, setVia] = useState<"ai" | "rules" | "">("");
   const [trace, setTrace] = useState<Trace[]>([]);
-  const [reviewOn, setReviewOn] = useState(true);
   const stopRef = useRef(false);
 
   /* overlay state */
@@ -154,24 +153,18 @@ const App: React.FC = () => {
     if (!story) return;
     stopRef.current = false;
     setPhase("shooting");
-    setShotP({ done: 0, total: story.scenes.filter((x) => x.kind === "image").length });
-    const { footage: f, shots, avg } = await shootAll(
-      story,
-      log,
-      (done, total) => setShotP({ done, total }),
-      { review: reviewOn, shouldStop: () => stopRef.current },
-    );
-    setFootage(f);
+    const built = await buildFilm(story, log, 32);
+    setStory(built.story);
+    setFootage({});
     setPhase("ready");
-    if (shots === 0) {
-      setMsg({
-        kind: "warn",
-        text: "The image model is unreachable, so scenes are rendered as generated fields. Bind Workers AI to shoot real stills.",
-      });
-    } else if (avg !== null) {
-      setMsg({ kind: avg >= 70 ? "ok" : "warn", text: `Shot ${shots} scenes · mean critic score ${avg}/100.` });
-    }
+    setMsg({
+      kind: built.pass ? "ok" : "warn",
+      text: built.pass
+        ? `Built ${built.story.scenes.length} beats · review ${built.score}/100 · every place drawn in code.`
+        : `Built with ${built.edits.length} corrections · review ${built.score}/100.`,
+    });
   };
+;
 
   const regenerate = (text: string) => {
     setPrompt(text);
@@ -575,30 +568,9 @@ const App: React.FC = () => {
                     </div>
                   )}
 
-                  <label
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                      fontFamily: "var(--mono)",
-                      fontSize: 10,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      color: "var(--muted)",
-                      marginTop: 14,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={reviewOn}
-                      onChange={(e) => setReviewOn(e.target.checked)}
-                      style={{ accentColor: "#00FF88" }}
-                    />
-                    critic reviews each shot
-                  </label>
-                  <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--dim)", lineHeight: 1.6, marginTop: 6 }}>
-                    Reviewing costs an extra model call per shot and roughly doubles neurons.
+                  <div style={{ fontFamily: "var(--mono)", fontSize: 9.5, color: "var(--dim)", lineHeight: 1.7, marginTop: 14 }}>
+                    The review is arithmetic, not a model: it costs nothing, runs offline, and checks copy fit,
+                    repeated beats, repeated cuts, contrast and length.
                   </div>
                 </div>
               </div>

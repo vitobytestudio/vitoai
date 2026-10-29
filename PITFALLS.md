@@ -117,3 +117,24 @@ git tag -f cdn-4 $C && git push -q origin refs/tags/cdn-4 --force
 working tree + force the tag to a tree without it. Never rewrite history (`filter-branch`/`filter-repo`)
 and never delete the repo root; deleting a blob from a branch tip does **not** shrink packed history,
 it only removes it from future serving.
+
+## E — procedural places (Oct 2026)
+
+- **`mix()` must parse its own output.** It returned `rgb(...)`, and the natural
+  thing to write is `mix(mix(a, b, 0.2), "#000", 0.4)`. The second call parsed
+  `rgb(` as hex, produced `NaN`, the browser dropped the declaration, and nested
+  blends rendered as *transparent* — which read as "the facade is missing".
+  Always round-trip colours through one parser.
+- **SVG layers are not reliable for procedural scenography.** The skyline built
+  from `<svg><rect>` rendered empty while the identical data as absolutely
+  positioned divs rendered correctly. Use divs for anything that must appear.
+- **Review order matters, not just review content.** The budget pass trimmed the
+  logo card to 1.6 s *after* the minimum-duration check had already passed it, so
+  the second round flagged a problem the first round created. Any critic needs
+  `floor` exceptions per beat kind and must run twice.
+- **A silhouette needs density.** Sprinkling 22 buildings at random x leaves a
+  skyline full of holes; marching them across the frame with overlapping widths
+  and varying heights is what makes it read as a city.
+- **Never let a repair drop copy silently.** The headline re-wrap once sliced to
+  three lines and discarded the rest without saying so. Every edit must be logged
+  with what was held back.

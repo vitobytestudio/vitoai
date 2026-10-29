@@ -42,11 +42,27 @@ export const rgba = (hex: string, a: number) => {
 };
 
 /** blend two hex colours */
+/**
+ * Parse any colour this file emits. It has to accept its own output: mix()
+ * returns rgb(), and mix(mix(a,b,.2), "#000", .4) is the most natural thing to
+ * write. Parsing only hex silently produced NaN colours, which the browser
+ * drops, which made nested blends render as transparent.
+ */
+const parseColor = (h: string): [number, number, number] => {
+  const str = (h || "").trim();
+  if (str.startsWith("rgb")) {
+    const n = str.slice(str.indexOf("(") + 1, -1).split(",").map((x) => parseFloat(x));
+    return [n[0] || 0, n[1] || 0, n[2] || 0];
+  }
+  const s = str.replace("#", "");
+  if (s.length === 3) {
+    return [parseInt(s[0] + s[0], 16), parseInt(s[1] + s[1], 16), parseInt(s[2] + s[2], 16)];
+  }
+  return [parseInt(s.slice(0, 2), 16) || 0, parseInt(s.slice(2, 4), 16) || 0, parseInt(s.slice(4, 6), 16) || 0];
+};
+
 export const mix = (a: string, b: string, t: number) => {
-  const p = (h: string) => {
-    const s = h.replace("#", "");
-    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)];
-  };
+  const p = parseColor;
   const [r1, g1, b1] = p(a);
   const [r2, g2, b2] = p(b);
   const q = (x: number, y: number) => Math.round(x + (y - x) * clamp(t));
