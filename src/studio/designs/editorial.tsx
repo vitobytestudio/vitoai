@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, DISP, PAD, DH, DW, fit, win, rgba, useTimeline, useHero, linesOf,
 } from "../kit";
+import { Grade, display } from "../craft";
 
 export const Editorial: React.FC<Brief> = (p) => {
   const t = useTimeline();
@@ -51,14 +52,14 @@ export const Editorial: React.FC<Brief> = (p) => {
       <div
         style={{
           position: "absolute",
-          right: -40,
-          top: 190,
+          right: -90,
+          top: 210,
           fontFamily: DISP,
           fontSize: 420,
           fontWeight: 700,
           lineHeight: 0.8,
           letterSpacing: "-0.08em",
-          color: rgba(a, 0.16),
+          color: rgba(a, 0.11),
           opacity: win(f, F * 0.1, F * 0.24) * exit,
         }}
       >
@@ -84,7 +85,7 @@ export const Editorial: React.FC<Brief> = (p) => {
       </div>
 
       {/* the hero number, set as a caption to the block */}
-      <div style={{ position: "absolute", left: PAD, top: 760, opacity: exit }}>
+      <div style={{ position: "absolute", left: PAD, top: 830, opacity: exit }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
           <div
             style={{
@@ -108,7 +109,7 @@ export const Editorial: React.FC<Brief> = (p) => {
       </div>
 
       {/* the headline, pulled tight */}
-      <div style={{ position: "absolute", left: PAD, right: PAD, top: 1130, opacity: exit }}>
+      <div style={{ position: "absolute", left: PAD, right: PAD, top: 1180, opacity: exit }}>
         {head.map((line, i) => {
           const on = win(f, F * 0.3 + i * 9, F * 0.36 + i * 9);
           return (
@@ -167,7 +168,7 @@ export const Editorial: React.FC<Brief> = (p) => {
         <div style={{ fontFamily: MONO, fontSize: 25, letterSpacing: "0.2em", color: a }}>{p.cta}</div>
       </div>
 
-      <Grain opacity={0.028} />
+      <Grade f={f} accent={a} amount={0.55} vignette={0.3} />
     </Stage>
   );
 };

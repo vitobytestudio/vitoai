@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, DISP, PAD, DH, DW, fit, win, rgba, hash, useTimeline, useHero, linesOf,
 } from "../kit";
+import { Grade, display } from "../craft";
 
 /** how violently the frame tears — spiky, not smooth */
 const tear = (f: number, seed: number, amount = 1) => {
@@ -193,7 +194,7 @@ export const Signal: React.FC<Brief> = (p) => {
         </div>
       </div>
 
-      <Grain opacity={0.055} />
+      <Grade f={f} accent={a} amount={1} vignette={0.62} />
     </Stage>
   );
 };

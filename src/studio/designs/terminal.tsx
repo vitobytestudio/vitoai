@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, PAD, DH, DW, fit, clamp, win, rgba, hash, useTimeline, useHero,
 } from "../kit";
+import { Grade, display } from "../craft";
 
 const FEED = [
   "acquire  bay-07   cores 16   mem 64g   ok",
@@ -170,7 +171,7 @@ export const Terminal: React.FC<Brief> = (p) => {
         </div>
       </div>
 
-      <Grain opacity={0.028} />
+      <Grade f={f} accent={a} amount={0.72} vignette={0.4} />
     </Stage>
   );
 };

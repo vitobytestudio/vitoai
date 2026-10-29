@@ -10,6 +10,7 @@ import { Brief } from "../types";
 import {
   Stage, Grain, Mark, MONO, DISP, PAD, DW, DH, fit, win, rgba, useTimeline, useHero,
 } from "../kit";
+import { Grade, display } from "../craft";
 
 const Dim: React.FC<{ x1: number; y1: number; x2: number; y2: number; color: string; label?: string; on: number }> = ({
   x1,
@@ -248,7 +249,7 @@ export const Blueprint: React.FC<Brief> = (p) => {
         </div>
       </div>
 
-      <Grain opacity={0.03} />
+      <Grade f={f} accent={a} amount={0.6} vignette={0.34} />
     </Stage>
   );
 };
