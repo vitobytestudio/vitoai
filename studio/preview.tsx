@@ -144,3 +144,23 @@ export const MiniFilm: React.FC<{ plan: Decision; width: number; fps?: number }>
     </div>
   );
 };
+
+/**
+ * A still of one beat — used on the studio's empty state to show, not tell, that
+ * the film has eleven different pages rather than one layout with new colours.
+ */
+export const BeatPoster: React.FC<{ plan: Decision; index: number; width: number; frame?: number }> = ({
+  plan,
+  index,
+  width,
+  frame = 26,
+}) => {
+  const h = (width * 1920) / 1080;
+  // absolute frame = the start of that beat + a little, so its own page is drawn
+  const start = plan.beats.slice(0, index).reduce((n, b) => n + Math.round(b.seconds * 30), 0);
+  return (
+    <div style={{ width, height: h, position: "relative", overflow: "hidden" }}>
+      <FilmFrame plan={plan} frame={start + frame} w={width} h={h} />
+    </div>
+  );
+};

@@ -44,7 +44,7 @@ export type Reason = { call: string; because: string };
 export type Decision = {
   brief: string;
   subject: Subject;
-  language: "ar" | "en";
+  language: "ar" | "en" | "fr";
   title: string;
   kicker: string;
   headline: string;
@@ -164,40 +164,40 @@ const TONE_OF: Record<Subject, { tone: Tone; pal: keyof typeof PAL }> = {
 
 /* ---------------------------------------------------------------- writing */
 
-const CAPTIONS: Record<Subject, { en: string[]; ar: string[] }> = {
-  fashion: { en: ["The pieces", "In the light", "Made to be worn", "The collection"], ar: ["القطع", "في الضوء", "تُلبس لتُرى", "المجموعة"] },
-  property: { en: ["The address", "The plan", "The arrival", "Every floor"], ar: ["العنوان", "المخطط", "الوصول", "كل طابق"] },
-  tech: { en: ["The platform", "The city it runs", "The record", "The build"], ar: ["المنصة", "المدينة التي تعمل فيها", "السجل", "البناء"] },
-  auto: { en: ["The machine", "The road", "At speed", "The night"], ar: ["الآلة", "الطريق", "بالسرعة", "الليل"] },
-  food: { en: ["The room", "The first bite", "The detail", "Every day"], ar: ["المكان", "أول لقمة", "التفصيل", "كل يوم"] },
-  travel: { en: ["The departure", "The city", "The view", "Stay longer"], ar: ["الانطلاق", "المدينة", "الإطلالة", "ابقَ أطول"] },
-  beauty: { en: ["The texture", "The ritual", "The finish", "Yours"], ar: ["الملمس", "الطقس", "اللمسة الأخيرة", "لك"] },
-  corporate: { en: ["The company", "The numbers", "The people", "The year"], ar: ["الشركة", "الأرقام", "الناس", "العام"] },
-  unknown: { en: ["The idea", "The place", "The detail", "The result"], ar: ["الفكرة", "المكان", "التفصيل", "النتيجة"] },
+const CAPTIONS: Record<Subject, { en: string[]; ar: string[]; fr: string[] }> = {
+  fashion: { en: ["The pieces", "In the light", "Made to be worn", "The collection"], ar: ["القطع", "في الضوء", "تُلبس لتُرى", "المجموعة"], fr: ["Les pièces", "Dans la lumière", "Faites pour être portées", "La collection"] },
+  property: { en: ["The address", "The plan", "The arrival", "Every floor"], ar: ["العنوان", "المخطط", "الوصول", "كل طابق"], fr: ["L'adresse", "Le plan", "L'arrivée", "Chaque étage"] },
+  tech: { en: ["The platform", "The city it runs", "The record", "The build"], ar: ["المنصة", "المدينة التي تعمل فيها", "السجل", "البناء"], fr: ["La plateforme", "La ville qui tourne", "Le registre", "La livraison"] },
+  auto: { en: ["The machine", "The road", "At speed", "The night"], ar: ["الآلة", "الطريق", "بالسرعة", "الليل"], fr: ["La machine", "La route", "À pleine vitesse", "La nuit"] },
+  food: { en: ["The room", "The first bite", "The detail", "Every day"], ar: ["المكان", "أول لقمة", "التفصيل", "كل يوم"], fr: ["La salle", "La première bouchée", "Le détail", "Chaque jour"] },
+  travel: { en: ["The departure", "The city", "The view", "Stay longer"], ar: ["الانطلاق", "المدينة", "الإطلالة", "ابقَ أطول"], fr: ["Le départ", "La ville", "La vue", "Restez plus longtemps"] },
+  beauty: { en: ["The texture", "The ritual", "The finish", "Yours"], ar: ["الملمس", "الطقس", "اللمسة الأخيرة", "لك"], fr: ["La matière", "Le rituel", "La tenue", "À vous"] },
+  corporate: { en: ["The company", "The numbers", "The people", "The year"], ar: ["الشركة", "الأرقام", "الناس", "العام"], fr: ["La maison", "Les chiffres", "Les gens", "L'année"] },
+  unknown: { en: ["The idea", "The place", "The detail", "The result"], ar: ["الفكرة", "المكان", "التفصيل", "النتيجة"], fr: ["L'idée", "Le lieu", "Le détail", "Le résultat"] },
 };
 
-const HEADLINE: Record<Subject, { en: string; ar: string }> = {
-  fashion: { en: "Cut for the\nway you move.", ar: "مصمَّمة\nلطريقتك في الحركة." },
-  property: { en: "An address\nthat holds.", ar: "عنوان\nيصمد." },
-  tech: { en: "Built for the\nwork that matters.", ar: "مبنيّ للعمل\nالذي يستحق." },
-  auto: { en: "Made for\nthe long road.", ar: "مصنوعة\nللطريق الطويل." },
-  food: { en: "Worth\nthe detour.", ar: "يستحق\nالانعطاف." },
-  travel: { en: "Somewhere\nelse entirely.", ar: "مكان\nآخر تماماً." },
-  beauty: { en: "Skin, not\nsurface.", ar: "بشرة،\nلا سطح." },
-  corporate: { en: "The year\nin one place.", ar: "العام\nفي مكان واحد." },
-  unknown: { en: "Made to be\nremembered.", ar: "مصنوع\nليُذكر." },
+const HEADLINE: Record<Subject, { en: string; ar: string; fr: string }> = {
+  fashion: { en: "Cut for the\nway you move.", ar: "مصمَّمة\nلطريقتك في الحركة.", fr: "Coupé pour\n votre allure." },
+  property: { en: "An address\nthat holds.", ar: "عنوان\nيصمد.", fr: "Une adresse\nqui tient." },
+  tech: { en: "Built for the\nwork that matters.", ar: "مبنيّ للعمل\nالذي يستحق.", fr: "Fait pour le\ntravail qui compte." },
+  auto: { en: "Made for\nthe long road.", ar: "مصنوعة\nللطريق الطويل.", fr: "Faite pour\nla longue route." },
+  food: { en: "Worth\nthe detour.", ar: "يستحق\nالانعطاف.", fr: "Ça vaut\nle détour." },
+  travel: { en: "Somewhere\nelse entirely.", ar: "مكان\nآخر تماماً.", fr: "Ailleurs,\ncomplètement." },
+  beauty: { en: "Skin, not\nsurface.", ar: "بشرة،\nلا سطح.", fr: "La peau,\npas la surface." },
+  corporate: { en: "The year\nin one place.", ar: "العام\nفي مكان واحد.", fr: "L'année\nen un lieu." },
+  unknown: { en: "Made to be\nremembered.", ar: "مصنوع\nليُذكر.", fr: "Fait pour\nrester." },
 };
 
-const SUB: Record<Subject, { en: string; ar: string }> = {
-  fashion: { en: "A collection photographed where it belongs.", ar: "مجموعة تُصوَّر حيث تنتمي." },
-  property: { en: "Position, plan, and light — in that order.", ar: "الموقع، المخطط، والضوء — بهذا الترتيب." },
-  tech: { en: "One surface for the whole team.", ar: "سطح واحد لكل الفريق." },
-  auto: { en: "Engineering you can hear.", ar: "هندسة تسمعها." },
-  food: { en: "The room does half the work.", ar: "المكان يقوم بنصف العمل." },
-  travel: { en: "Three nights is not enough.", ar: "ثلاث ليالٍ لا تكفي." },
-  beauty: { en: "What the light does to skin.", ar: "ما يفعله الضوء بالبشرة." },
-  corporate: { en: "Twelve months, honestly reported.", ar: "اثنا عشر شهراً، بصدق." },
-  unknown: { en: "A short film about one idea.", ar: "فيلم قصير عن فكرة واحدة." },
+const SUB: Record<Subject, { en: string; ar: string; fr: string }> = {
+  fashion: { en: "A collection photographed where it belongs.", ar: "مجموعة تُصوَّر حيث تنتمي.", fr: "Une collection photographiée là où elle appartient." },
+  property: { en: "Position, plan, and light — in that order.", ar: "الموقع، المخطط، والضوء — بهذا الترتيب.", fr: "Position, plan et lumière — dans cet ordre." },
+  tech: { en: "One surface for the whole team.", ar: "سطح واحد لكل الفريق.", fr: "Une surface pour toute l'équipe." },
+  auto: { en: "Engineering you can hear.", ar: "هندسة تسمعها.", fr: "Une ingénierie qu'on entend." },
+  food: { en: "The room does half the work.", ar: "المكان يقوم بنصف العمل.", fr: "La salle fait la moitié du travail." },
+  travel: { en: "Three nights is not enough.", ar: "ثلاث ليالٍ لا تكفي.", fr: "Trois nuits ne suffisent pas." },
+  beauty: { en: "What the light does to skin.", ar: "ما يفعله الضوء بالبشرة.", fr: "Ce que la lumière fait à la peau." },
+  corporate: { en: "Twelve months, honestly reported.", ar: "اثنا عشر شهراً، بصدق.", fr: "Douze mois, rapportés honnêtement." },
+  unknown: { en: "A short film about one idea.", ar: "فيلم قصير عن فكرة واحدة.", fr: "Un court film sur une seule idée." },
 };
 
 /** pull the most specific phrase out of the brief to use as a title */
@@ -218,9 +218,20 @@ export type BrainOptions = {
   maxSeconds?: number;
 };
 
+/**
+ * French, detected the cheap and honest way: the small words that only French
+ * uses in a brief, plus accented letters. A brief that happens to be English
+ * will not contain them.
+ */
+const isFrench = (s: string) =>
+  /[àâçéèêëîïôûùüÿœ]/i.test(s) ||
+  /(^|\s)(le|la|les|un|une|des|du|de la|pour|avec|sur|dans|nous|notre|une|nouveau|nouvelle|lancement|collection|film|maison|projet|marque|parfum|immobilier)(\s|$)/i.test(
+    s.toLowerCase(),
+  );
+
 export const think = (brief: string, opts: BrainOptions = {}): Decision => {
   const subject = classify(brief);
-  const language: "ar" | "en" = isArabic(brief) ? "ar" : "en";
+  const language: "ar" | "en" | "fr" = isArabic(brief) ? "ar" : isFrench(brief) ? "fr" : "en";
   const allowed = ALLOWED[subject];
   const forbidden = FORBIDDEN[subject];
   const { tone, pal } = TONE_OF[subject];
@@ -266,6 +277,20 @@ export const think = (brief: string, opts: BrainOptions = {}): Decision => {
   /* narration: one sentence per beat, in the brief's language, describing what
      is actually on screen. Never a slogan that could belong to any brand. */
   const voice: string[] = beats.map((b) => {
+    if (language === "fr") {
+      switch (b.kind) {
+        case "hook":
+          return HEADLINE[subject].fr.replace(/\n/g, " ");
+        case "place":
+          return `${b.caption} — ${SUB[subject].fr}`;
+        case "evidence":
+          return `${b.caption}. ${SUB[subject].fr}`;
+        case "number":
+          return "Des chiffres vérifiables.";
+        default:
+          return "Vito Byte.";
+      }
+    }
     if (language === "ar") {
       switch (b.kind) {
         case "hook":
@@ -355,3 +380,19 @@ export const think = (brief: string, opts: BrainOptions = {}): Decision => {
 /** human summary for the "what I decided" panel */
 export const summarise = (d: Decision) =>
   `${d.beats.length} beats · ${d.seconds}s · ${new Set(d.worlds).size} places · ${d.subject} · ${d.language.toUpperCase()}`;
+
+
+/* ------------------------------------------------------------------ demo */
+
+/**
+ * The film on the front page. It is a real plan, made by the same engine, in
+ * the language of the page — showing an Arabic film to an English visitor would
+ * undo the work of translating the site.
+ */
+const DEMO_BRIEF: Record<"en" | "fr" | "ar", string> = {
+  en: "a new perfume, a global launch, Paris at night",
+  fr: "un nouveau parfum, lancement mondial, Paris la nuit",
+  ar: "حملة عطر جديدة، إطلاق عالمي، ليل باريس",
+};
+
+export const demoFilm = (lang: "en" | "fr" | "ar") => think(DEMO_BRIEF[lang], { seconds: 18 });

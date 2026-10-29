@@ -142,3 +142,38 @@ Bindings: `ASSETS` only. No KV, no D1, no R2, no secrets.
   30 s to record. Keep the tab in front.
 - Nothing is uploaded anywhere. That is a feature for enterprise buyers, and it
   is why there is no per-export cost.
+
+
+## The address
+
+The site is `nexus.vitobytestudio.workers.dev`. That is not a custom domain: it is
+the Worker named `nexus` under the account's `workers.dev` subdomain, so the name
+in `wrangler.toml` is the address. Changing `name` moves the site.
+
+Every page answers on a cold load, because the Worker serves the single-page app
+for unknown paths (`not_found_handling = "single-page-application"`):
+
+    /            home
+    /studio      the tool
+    /models      three engines and the comparison
+    /about       what it is, what it is not
+    /privacy     the privacy note (trial version)
+    /terms       the terms (trial version)
+    /feedback    the trial's feedback form
+    /inbox       the feedback inbox, gated by FEEDBACK_KEY
+
+The deploy smoke test now fetches every one of those pages and both endpoints, so
+a broken route fails the build instead of the visitor.
+
+## Feedback storage
+
+`POST /api/feedback` writes to a KV namespace bound as `FEEDBACK` when one exists.
+The workflow tries to find or create that namespace after installing, and appends
+the binding to `wrangler.toml` for the deploy — best effort, `continue-on-error`.
+Without a namespace the note still goes to the Worker log (observability is on),
+and `/api/feedback` answers `{"ok":true,"stored":false}`: the visitor is told the
+truth rather than a form that silently eats a complaint.
+
+`/inbox` requires `FEEDBACK_KEY`. It is set in `[vars]` today so the owner can
+open it immediately; rotate it with `npx wrangler secret put FEEDBACK_KEY`, which
+takes precedence over the plain var.

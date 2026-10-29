@@ -98,11 +98,24 @@ const worldSpec = (b: Beat, p: Decision, f: number, total: number) => ({
 });
 
 /** numerals in the script the film is set in */
+/**
+ * The film's embedded faces are subsets. A dash outside the subset draws as a
+ * box, which looks like a bug in the layout. Normalise the characters that have
+ * bitten us before: dashes, non-breaking spaces, ellipsis.
+ */
+const txt = (v?: string) =>
+  (v || "")
+    .replace(/\s*[—–]\s*/g, " · ")
+    .replace(/\u00a0/g, " ")
+    .replace(/…/g, "...");
+
 const rl = (n: number, rtl: boolean) => (rtl ? String(n).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[+d]) : String(n));
 
 /** names for beats that carry no caption of their own */
-const beatLabel = (b: Beat, rtl: boolean) => {
+const beatLabel = (b: Beat, rtl: boolean, french = false) => {
   if (b.caption) return b.caption;
+  if (french)
+    return ({ hook: "la thèse", place: "le lieu", evidence: "la preuve", detail: "le détail", number: "le chiffre", end: "la signature" } as Record<string, string>)[b.kind] || b.kind;
   if (rtl) return ({ hook: "المقدمة", place: "المكان", evidence: "الدليل", detail: "التفصيل", number: "الأرقام", end: "الخاتمة" } as Record<string, string>)[b.kind] || b.kind;
   return ({ hook: "the claim", place: "the place", evidence: "the proof", detail: "the detail", number: "the record", end: "the signature" } as Record<string, string>)[b.kind] || b.kind;
 };
@@ -152,7 +165,7 @@ const Poster: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
         }}
       >
         <div style={{ fontFamily: fam(rtl), ...(rtl ? {} : display(104 * k, 1.02)), fontSize: 118 * k, fontWeight: 700, lineHeight: 1.02, color: tok.ink, whiteSpace: "pre-line" }}>
-          {beat.kind === "hook" ? plan.headline : beatLabel(beat, rtl)}
+          {beat.kind === "hook" ? txt(plan.headline) : txt(beatLabel(beat, rtl, plan.language === "fr"))}
         </div>
         <div style={{ height: 1, background: tok.accent, width: `${Math.max(0, Math.min(1, (f - 18) / 26)) * 38}%`, marginTop: 34 * k, opacity: 0.9 }} />
       </div>
@@ -207,10 +220,10 @@ const Editorial: React.FC<ArtProps & { index?: number }> = ({ beat, plan, f, tot
       >
         <div style={{ width: 76 * k, height: 3, background: plan.accent, marginBottom: 30 * k }} />
         <div style={{ fontFamily: fam(rtl), fontSize: 92 * k, lineHeight: 1.04, fontWeight: 700, letterSpacing: rtl ? 0 : "-0.04em", color: tok.ink }}>
-          {beatLabel(beat, rtl)}
+          {txt(beatLabel(beat, rtl, plan.language === "fr"))}
         </div>
         <div style={{ fontFamily: fam(rtl), fontSize: 28 * k, lineHeight: 1.6, color: tok.dim, marginTop: 26 * k, maxWidth: 800 * k }}>
-          {beat.line || plan.sub}
+          {txt(beat.line || plan.sub)}
         </div>
       </div>
     </div>
@@ -230,7 +243,7 @@ const Silent: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 380 * k, background: "linear-gradient(180deg, rgba(4,7,11,0), rgba(4,7,11,0.85))" }} />
       <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 150 * k, display: "flex", alignItems: "center", gap: 14 * k, opacity: clamp((f - 12) / 26) }}>
         <span style={{ width: 7 * k, height: 7 * k, borderRadius: 99, background: plan.accent }} />
-        <span style={{ fontFamily: monoFam(rtl), fontSize: 13 * k, letterSpacing: rtl ? 0 : "0.3em", color: tok.dim, textTransform: "uppercase" }}>{beatLabel(beat, rtl)}</span>
+        <span style={{ fontFamily: monoFam(rtl), fontSize: 13 * k, letterSpacing: rtl ? 0 : "0.3em", color: tok.dim, textTransform: "uppercase" }}>{txt(beatLabel(beat, rtl, plan.language === "fr"))}</span>
         <span style={{ flex: 1, height: 1, background: tok.hair2, position: "relative" }}>
           <span style={{ position: "absolute", left: `${travel * 100}%`, top: -2 * k, width: 26 * k, height: 2 * k, background: plan.accent }} />
         </span>
@@ -274,7 +287,7 @@ const Index: React.FC<ArtProps> = ({ plan, f, k }) => {
             >
               <span style={{ fontFamily: MONO, fontSize: 12 * k, color: tok.faint, width: 32 * k, flex: "0 0 32px" }}>{String(i + 1).padStart(2, "0")}</span>
               <span style={{ fontFamily: fam(rtl), fontSize: 54 * k, lineHeight: 1.1, fontWeight: 600, color: last ? tok.dim : tok.ink, flex: 1, direction: rtl ? "rtl" : "ltr" }}>
-                {beatLabel(b, rtl)}
+                {txt(beatLabel(b, rtl, plan.language === "fr"))}
               </span>
               <span style={{ fontFamily: MONO, fontSize: 11 * k, letterSpacing: "0.14em", color: rgba(plan.accent, 0.65), textTransform: "uppercase", flex: "0 0 auto" }}>
                 {b.world || b.kind}
@@ -352,7 +365,7 @@ const Metric: React.FC<ArtProps> = ({ beat, plan, f, k }) => {
         <div style={{ marginTop: 26 * k, display: "flex", alignItems: "center", gap: 14 * k }}>
           <span style={{ width: 6 * k, height: 6 * k, borderRadius: 99, background: plan.accent }} />
           <span style={{ fontFamily: monoFam(rtl), fontSize: 13 * k, letterSpacing: rtl ? 0 : "0.28em", textTransform: "uppercase", color: tok.dim }}>
-            {beat.caption || beatLabel(beat, rtl)}
+            {txt(beat.caption || beatLabel(beat, rtl, plan.language === "fr"))}
           </span>
         </div>
       </div>
@@ -374,7 +387,7 @@ const Grid4: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
   return (
     <div style={{ position: "absolute", inset: 0, background: tok.bg }}>
       <div style={{ position: "absolute", left: M * k, top: 96 * k, right: M * k, display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: fam(rtl), fontSize: 26 * k, fontWeight: 600, color: tok.ink, direction: rtl ? "rtl" : "ltr" }}>{beat.caption || beatLabel(beat, rtl)}</span>
+        <span style={{ fontFamily: fam(rtl), fontSize: 26 * k, fontWeight: 600, color: tok.ink, direction: rtl ? "rtl" : "ltr" }}>{txt(beat.caption || beatLabel(beat, rtl, plan.language === "fr"))}</span>
         <span style={{ fontFamily: MONO, fontSize: 11 * k, letterSpacing: "0.24em", color: tok.faint }}>{rl(4, rtl)} {rtl ? "لقطات" : "cuts"}</span>
       </div>
       {worlds.map((w, i) => {
@@ -418,7 +431,7 @@ const Grid4: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
       <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 150 * k }}>
         <div style={{ height: 1, background: tok.hair2, marginBottom: 22 * k }} />
         <span style={{ fontFamily: fam(rtl), fontSize: 34 * k, lineHeight: 1.5, color: tok.dim, direction: rtl ? "rtl" : "ltr" }}>
-          {beat.line || plan.sub}
+          {txt(beat.line || plan.sub)}
         </span>
       </div>
     </div>
@@ -446,7 +459,7 @@ const Diptych: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
         <div style={{ position: "absolute", left: M * k, right: M * k, top: 74 * k }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 * k, opacity: p }}>
             <span style={{ fontFamily: monoFam(rtl), fontSize: 12 * k, letterSpacing: rtl ? 0 : "0.3em", color: plan.accent, textTransform: "uppercase" }}>
-              {beat.caption || beatLabel(beat, rtl)}
+              {txt(beat.caption || beatLabel(beat, rtl, plan.language === "fr"))}
             </span>
             <span style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.16)" }} />
           </div>
@@ -463,7 +476,7 @@ const Diptych: React.FC<ArtProps> = ({ beat, plan, f, total, k }) => {
               transform: `translateY(${(1 - p) * 22 * k}px)`,
             }}
           >
-            {beat.line || plan.sub}
+            {txt(beat.line || plan.sub)}
           </div>
         </div>
       </div>
@@ -557,7 +570,7 @@ const Marquee: React.FC<ArtProps> = ({ plan, f, k, beat }) => {
       <div style={{ position: "absolute", left: M * k, right: M * k, bottom: 250 * k, zIndex: 3, direction: rtl ? "rtl" : "ltr" }}>
         <div style={{ width: 64 * k, height: 3, background: plan.accent, marginBottom: 24 * k }} />
         <div style={{ fontFamily: fam(rtl), fontSize: 54 * k, lineHeight: 1.16, fontWeight: 600, color: tok.ink }}>
-          {beat.line || plan.headline.replace(/\n/g, " ")}
+          {txt(beat.line || plan.headline.replace(/\n/g, " "))}
         </div>
       </div>
     </div>

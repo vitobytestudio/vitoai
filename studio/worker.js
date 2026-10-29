@@ -1,15 +1,17 @@
 /**
- * NEXUS STUDIO — Cloudflare Worker.
+ * NEXUS — Cloudflare Worker.
  *
- * Serves the static bundle, and exposes the agent's four tools:
+ * The whole backend: a static site, two agent endpoints, and a trial feedback
+ * box. There is no render service, no queue and no database.
  *
- *   POST /api/plan    brief  → storyboard JSON   (llama-3.1-8b)
- *   (no image endpoint: places are built in the browser from geometry)
- *   GET  /api/health  what is actually bound
+ *   POST /api/direction        brief + skeleton → the director's writing
+ *   POST /api/plan             brief → a raw storyboard (older tool, kept)
+ *   POST /api/feedback         a tester's note → KV (or the log)
+ *   GET  /api/feedback/inbox   the notes, for the studio owner
+ *   GET  /api/health           what is actually bound
  *
- * The agent loop lives in the browser and uses these the way a person uses
- * tools: plan, shoot, LOOK AT THE RESULT, fix, shoot again, then assemble.
- * Nothing here renders video — that is done by the visitor's browser.
+ * Nothing here renders video: the film is drawn and encoded in the visitor's
+ * browser, which is also why no footage is ever uploaded anywhere.
  */
 
 const CORS = {
@@ -216,6 +218,76 @@ const handleDirection = async (req, env) => {
   }
 };
 
+
+/* -------------------------------------------------------------------------- */
+/*  the trial box                                                             */
+/* -------------------------------------------------------------------------- */
+
+const trim = (v, n) => String(v == null ? "" : v).slice(0, n);
+
+/**
+ * Feedback is stored only if a KV namespace is bound. Without one the note is
+ * written to the Worker log (observability is on) and the visitor is still told
+ * the truth about what happened — a form that silently eats a complaint is the
+ * worst possible thing to ship in a trial.
+ */
+const handleFeedback = async (req, env) => {
+  let body = {};
+  try {
+    body = (await req.json()) || {};
+  } catch {
+    return json({ error: "bad_request" }, 400);
+  }
+
+  const message = trim(body.message, 2000).trim();
+  if (message.length < 2) return json({ error: "empty" }, 400);
+
+  const entry = {
+    at: new Date().toISOString(),
+    kind: trim(body.kind, 40) || "note",
+    message,
+    email: trim(body.email, 160),
+    lang: trim(body.lang, 8),
+    path: trim(body.path, 120),
+    ua: trim(req.headers.get("user-agent"), 160),
+  };
+
+  let stored = false;
+  try {
+    if (env.FEEDBACK) {
+      const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      await env.FEEDBACK.put(`f:${id}`, JSON.stringify(entry));
+      stored = true;
+    }
+  } catch {
+    stored = false;
+  }
+
+  console.log("feedback", JSON.stringify({ ...entry, stored }));
+  return json({ ok: true, stored });
+};
+
+const handleInbox = async (env, url) => {
+  const key = url.searchParams.get("key") || "";
+  const expected = env.FEEDBACK_KEY || "";
+  if (!expected || key !== expected) return json({ error: "forbidden" }, 403);
+  if (!env.FEEDBACK) return json({ error: "no_store" }, 501);
+
+  const list = await env.FEEDBACK.list({ prefix: "f:", limit: 200 });
+  const keys = list.keys.slice(-80).reverse();
+  const items = [];
+  for (const k of keys) {
+    const raw = await env.FEEDBACK.get(k.name);
+    if (!raw) continue;
+    try {
+      items.push(JSON.parse(raw));
+    } catch {
+      /* skip a corrupt entry rather than break the inbox */
+    }
+  }
+  return json({ items });
+};
+
 /* -------------------------------------------------------------------------- */
 export default {
   async fetch(request, env) {
@@ -228,12 +300,15 @@ export default {
         ok: true,
         ai: Boolean(env.AI),
         models: { plan: env.PLAN_MODEL || "@cf/meta/llama-3.1-8b-instruct" },
-        tools: ["/api/direction", "/api/plan"],
+        tools: ["/api/direction", "/api/plan", "/api/feedback"],
+        inbox: Boolean(env.FEEDBACK_KEY),
       });
     }
 
     if (url.pathname === "/api/plan" && request.method === "POST") return handlePlan(request, env);
     if (url.pathname === "/api/direction" && request.method === "POST") return handleDirection(request, env);
+    if (url.pathname === "/api/feedback" && request.method === "POST") return handleFeedback(request, env);
+    if (url.pathname === "/api/feedback/inbox" && request.method === "GET") return handleInbox(env, url);
 
     const res = await env.ASSETS.fetch(request);
     const headers = new Headers(res.headers);

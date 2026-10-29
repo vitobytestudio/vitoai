@@ -1,4 +1,4 @@
-name: Deploy VITO STUDIO
+name: Deploy NEXUS
 
 # The studio is a Worker plus static assets. This workflow builds the bundle and
 # publishes it with the Cloudflare token kept in repository secrets — the token
@@ -74,6 +74,27 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "credentials resolved ($([ -n "${A1:-${A2:-}}" ] && echo from secret || echo from API))"
 
+      - name: Feedback store (best effort)
+        # A trial needs somewhere to put the criticism. If a KV namespace can be
+        # created with the token, bind it; if not, the deploy still succeeds and
+        # notes go to the Worker log instead.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          OUT=$(npx --yes wrangler@4 kv namespace list 2>/dev/null || true)
+          ID=$(printf '%s' "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=s.match(/\"title\"\s*:\s*\"[^\"]*FEEDBACK[^\"]*\"[^}]*?\"id\"\s*:\s*\"([a-f0-9]+)\"/);const b=s.match(/\"id\"\s*:\s*\"([a-f0-9]+)\"[^}]*?\"title\"\s*:\s*\"[^\"]*FEEDBACK[^\"]*\"/);process.stdout.write((a&&a[1])||(b&&b[1])||'')})")
+          if [ -z "$ID" ]; then
+            CREATE=$(npx --yes wrangler@4 kv namespace create FEEDBACK 2>&1 || true)
+            printf '%s\n' "$CREATE" | grep -Ei "success|id" | head -3 || true
+            ID=$(printf '%s' "$CREATE" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=s.match(/\"id\"\s*:\s*\"([a-f0-9]+)\"/)||s.match(/id\s*=\s*\"([a-f0-9]+)\"/);process.stdout.write(a?a[1]:'')})")
+          fi
+          if [ -n "$ID" ]; then
+            printf '\n[[kv_namespaces]]\nbinding = "FEEDBACK"\nid = "%s"\n' "$ID" >> wrangler.toml
+            echo "feedback store bound ($ID)"
+          else
+            echo "::warning::no KV namespace — feedback will be logged, not stored"
+          fi
+
       - name: Deploy
         run: |
           set -o pipefail
@@ -124,6 +145,18 @@ jobs:
           js=$(curl -s -m 30 -o /tmp/app.js -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
           echo "GET /app.js -> $js"
           grep -o "VITO LITE V2" /tmp/app.js | head -1
+
+          # every page must answer, because they are all linked from the footer
+          for p in / /studio /models /about /privacy /terms /feedback; do
+            c=$(curl -s -m 20 -o /dev/null -w "%{http_code}" "$STUDIO_URL$p")
+            echo "GET $p -> $c"
+            [ "$c" = "200" ] || { echo "::error::$p answered $c"; exit 1; }
+          done
+
+          # and the two agent endpoints must be alive, not 404
+          echo "health: $(curl -s -m 20 "$STUDIO_URL/api/health")"
+          c=$(curl -s -m 20 -o /dev/null -w "%{http_code}" -X POST -H 'content-type: application/json' -d '{"message":"deploy smoke test","kind":"deploy"}' "$STUDIO_URL/api/feedback")
+          echo "POST /api/feedback -> $c"
 
       - name: Record the URL in the repository
         if: env.STUDIO_URL != ''

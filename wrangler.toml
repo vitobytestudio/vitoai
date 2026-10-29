@@ -1,4 +1,5 @@
-name = "vitobytestudio"
+# the name is the address: nexus.vitobytestudio.workers.dev
+name = "nexus"
 main = "studio/worker.js"
 compatibility_date = "2024-11-01"
 workers_dev = true
@@ -23,3 +24,6 @@ binding = "AI"
 
 [vars]
 PLAN_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+# the key that opens /inbox. It only reads trial feedback; rotate it with
+#   npx wrangler secret put FEEDBACK_KEY
+FEEDBACK_KEY = "nexus-trial"

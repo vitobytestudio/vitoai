@@ -218,3 +218,28 @@ it only removes it from future serving.
 - **Drive the browser over CDP, don't screenshot blind.** `tools/drive.mjs`
   opens a tab, types into the field, clicks Create and photographs the result;
   every claim about "feels instant" in this repository is measured there.
+
+
+## I — a site, not a page
+
+- **`router.ts` containing JSX does not compile.** esbuild resolves `.ts` before
+  `.tsx`; a component in a `.ts` file fails with `Expected ">" but found "href"`,
+  which reads like a syntax error in the JSX and is really a file extension. The
+  router is `router.tsx`.
+- **The Arabic page needs its own face and its own letter-spacing.** Cairo, with
+  `letter-spacing: 0`, for every eyebrow, label and footnote — otherwise the
+  tracked-out monospace that makes the Latin design feel premium turns Arabic
+  into disconnected letters. `.site.rtl` does this once, at the root.
+- **A front-page demo must be in the page's language.** Showing an Arabic film to
+  a French visitor undoes the translation. `demoFilm(lang)` builds three demos;
+  the planner had to learn French for that, which it now does (`isFrench`, a
+  caption table, a narrator branch).
+- **The film's fonts are subsets, so a dash is a box.** `L'arrivée. Position, plan
+  et lumière — dans cet ordre.` rendered the em dash as tofu. Every string that
+  reaches a frame goes through `txt()`, which converts em/en dashes to ` · `,
+  non-breaking spaces to spaces and `…` to `...`. The line reads better for it.
+- **A stat never shows a zero it cannot stand behind.** "0 files uploaded" was a
+  truism dressed as a number; the fourth stat is now the trial's real limit.
+- **A blank studio is a template.** The empty state renders three real beats of a
+  real film, each labelled with the page architecture it actually got, computed
+  from `chooseArch` rather than typed by hand.
