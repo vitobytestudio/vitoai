@@ -14,6 +14,7 @@ import { StoryFilm } from "./studio/StoryFilm";
 import { planStory, totalSeconds } from "./studio/story";
 import { VitoFilm as AgentFilm, framesFor as agentFrames } from "./studio/VitoFilm";
 import { Amaze } from "./studio/reel/Amaze";
+import { Showreel, DURATION as REEL_DURATION } from "./studio/reel/Showreel";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -108,6 +109,8 @@ export const RemotionRoot: React.FC = () => (
       height={1920}
       defaultProps={{}}
     />
+    {/* NEXUS SHOWREEL — 30s, eight movements, the studio's own advertisement */}
+    <Composition id="Showreel" component={Showreel} durationInFrames={REEL_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
     <Composition id="NexusReel" component={Reel} durationInFrames={1080} fps={30} width={WIDTH} height={HEIGHT} />
     {/* enterprise product film — planned, then built from UI primitives */}

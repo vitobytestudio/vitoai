@@ -43,21 +43,26 @@ const rnd = (n: number) => {
 };
 
 /** clip-reveal: the child is unmasked from `p` of its own height */
-const Clip: React.FC<{ p: number; dir?: "up" | "down" | "left"; children: React.ReactNode; style?: React.CSSProperties }> = ({
-  p,
-  dir = "up",
-  children,
-  style,
-}) => {
-  const inner =
+const Clip: React.FC<{
+  p: number;
+  dir?: "up" | "down" | "left";
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}> = ({ p, dir = "up", children, style }) => {
+  // A box with overflow:hidden is sized by its line box, and Arabic glyphs
+  // (ص، ج، ع، ي) draw well below that box — so the word gets sliced. A clip-path
+  // with NEGATIVE insets expands the mask beyond the element: nothing can be
+  // cut, and the reveal still travels.
+  const done = p >= 0.999;
+  const mask =
     dir === "up"
-      ? { transform: `translateY(${(1 - p) * 102}%)` }
+      ? `inset(-40% -12% ${(1 - p) * 100}% -12%)`
       : dir === "down"
-        ? { transform: `translateY(${-(1 - p) * 102}%)` }
-        : { transform: `translateX(${-(1 - p) * 102}%)` };
+        ? `inset(${(1 - p) * 100}% -12% -40% -12%)`
+        : `inset(-40% ${(1 - p) * 100}% -40% -12%)`;
   return (
-    <span style={{ display: "block", overflow: "hidden", ...style }}>
-      <span style={{ display: "block", ...inner }}>{children}</span>
+    <span style={{ display: "block", clipPath: done ? undefined : mask, ...style }}>
+      <span style={{ display: "block" }}>{children}</span>
     </span>
   );
 };
@@ -425,19 +430,19 @@ const Depth: React.FC<{ f: number }> = ({ f }) => {
         {lines.map((l, i) => {
           const p = t(f, 216 + i * 14, 250 + i * 14);
           return (
-            <div key={i} style={{ overflow: "hidden", marginBottom: 6 }}>
-              <div
-                style={{
-                  fontFamily: AR,
-                  fontSize: i === 1 ? 132 : 96,
-                  fontWeight: i === 1 ? 800 : 700,
-                  lineHeight: 1.12,
-                  color: i === 1 ? ACCENT : PAPER,
-                  transform: `translateY(${(1 - p) * 108}%)`,
-                }}
-              >
-                {l}
-              </div>
+            <div
+              key={i}
+              style={{
+                fontFamily: AR,
+                fontSize: i === 1 ? 132 : 96,
+                fontWeight: i === 1 ? 800 : 700,
+                lineHeight: 1.14,
+                color: i === 1 ? ACCENT : PAPER,
+                marginBottom: 4,
+                clipPath: `inset(-40% -12% ${(1 - p) * 100}% -12%)`,
+              }}
+            >
+              {l}
             </div>
           );
         })}
@@ -468,19 +473,19 @@ const MicroScene: React.FC<{ i: number; f: number; local: number }> = ({ i, f, l
       return (
         <div style={{ position: "absolute", inset: 0, display: "grid", placeContent: "center", direction: "rtl" }}>
           {["صمت", "يُسمع"].map((w, k) => (
-            <div key={k} style={{ overflow: "hidden" }}>
-              <div
-                style={{
-                  fontFamily: AR,
-                  fontSize: k ? 200 : 150,
-                  fontWeight: 800,
-                  lineHeight: 1.02,
-                  color: k ? ACCENT : PAPER,
-                  transform: `translateY(${(1 - t(local, k * 3, 12 + k * 3)) * 104}%)`,
-                }}
-              >
-                {w}
-              </div>
+            <div
+              key={k}
+              style={{
+                fontFamily: AR,
+                fontSize: k ? 200 : 150,
+                fontWeight: 800,
+                lineHeight: 1.12,
+                color: k ? ACCENT : PAPER,
+                clipPath: `inset(-40% -12% ${(1 - t(local, k * 3, 12 + k * 3)) * 100}% -12%)`,
+                textAlign: "center",
+              }}
+            >
+              {w}
             </div>
           ))}
         </div>
