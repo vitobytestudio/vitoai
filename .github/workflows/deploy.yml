@@ -104,10 +104,31 @@ jobs:
       - name: Smoke test
         if: env.STUDIO_URL != ''
         run: |
-          set -e
-          code=$(curl -s -o /tmp/page.html -w "%{http_code}" "$STUDIO_URL/")
-          echo "GET / -> $code"
-          head -c 300 /tmp/page.html | tr -d '\n' | cut -c1-160; echo
-          js=$(curl -s -o /dev/null -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
+          echo "target: $STUDIO_URL"
+          # a fresh workers.dev route can take a moment to answer; retry rather
+          # than declaring the deploy broken
+          code=000
+          for i in $(seq 1 12); do
+            code=$(curl -sS -m 20 -o /tmp/page.html -w "%{http_code}" "$STUDIO_URL/" || echo 000)
+            echo "attempt $i -> GET / $code"
+            [ "$code" = "200" ] && break
+            sleep 8
+          done
+          if [ "$code" != "200" ]; then
+            echo "--- body ---"; head -c 400 /tmp/page.html || true; echo
+            echo "--- headers ---"
+            curl -sS -m 20 -D - -o /dev/null "$STUDIO_URL/" || true
+            echo "::error::The studio answered $code"
+            exit 1
+          fi
+          js=$(curl -s -m 30 -o /tmp/app.js -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
           echo "GET /app.js -> $js"
-          [ "$code" = "200" ] || (echo "::error::The studio did not answer 200" && exit 1)
+          grep -o "VITO LITE V2" /tmp/app.js | head -1
+
+      - name: Keep the deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log
+          path: /tmp/deploy.log
+          if-no-files-found: ignore

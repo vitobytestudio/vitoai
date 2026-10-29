@@ -1,6 +1,7 @@
 name = "vitobytestudio"
 main = "studio/worker.js"
 compatibility_date = "2024-11-01"
+workers_dev = true
 
 # Everything the studio needs is static. There is no render service, no queue
 # and no database — the film is encoded in the visitor's browser, so a KV-less,
