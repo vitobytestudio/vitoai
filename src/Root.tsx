@@ -9,6 +9,7 @@ import { VitoFilm } from "./vito/VitoFilm";
 import { Autonomy } from "./autonomy/Autonomy";
 import { Film } from "./studio/Film";
 import { DEFAULT_BRIEF } from "./studio/types";
+import { ProductFilm, planProduct, planSeconds } from "./studio/premium";
 import { StoryFilm } from "./studio/StoryFilm";
 import { planStory, totalSeconds } from "./studio/story";
 import { DURATION as AUTO_DUR, FPS as AUTO_FPS, W as AUTO_W, H as AUTO_H } from "./autonomy/space";
@@ -84,6 +85,15 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="VitoFilm" component={VitoFilm} durationInFrames={1920} fps={60} width={WIDTH} height={HEIGHT} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
     <Composition id="NexusReel" component={Reel} durationInFrames={1080} fps={30} width={WIDTH} height={HEIGHT} />
+    {/* enterprise product film — planned, then built from UI primitives */}
+    <Composition
+      id="ProductFilm"
+      component={ProductFilm}
+      durationInFrames={Math.round(planSeconds(planProduct("github")) * 30)}
+      fps={30}
+      width={WIDTH}
+      height={HEIGHT}
+    />
     {/* NEXUS — 60s, authored at 30fps */}
     <Composition
       id="NexusAd"
