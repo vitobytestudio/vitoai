@@ -7,6 +7,7 @@ import { NexusAd } from "./nexus/NexusAd";
 import { Reel } from "./nexus3d/Reel";
 import { VitoFilm } from "./vito/VitoFilm";
 import { Autonomy } from "./autonomy/Autonomy";
+import { StudioFilm, DEFAULT_BRIEF } from "./studio/StudioFilm";
 import { DURATION as AUTO_DUR, FPS as AUTO_FPS, W as AUTO_W, H as AUTO_H } from "./autonomy/space";
 import { DURATION as NX_DURATION, FPS_AUTH as NX_FPS } from "./nexus/palette";
 import { FontGate } from "./FontGate";
@@ -41,6 +42,17 @@ export const RemotionRoot: React.FC = () => (
       height={HEIGHT}
     />
     {/* VITO BYTE STUDIO — 32s flat, 60fps */}
+    {/* the parametric film the studio app renders, registered so it can be
+        rendered and audited through the same pipeline as everything else */}
+    <Composition
+      id="StudioFilm"
+      component={StudioFilm}
+      durationInFrames={240}
+      fps={30}
+      width={720}
+      height={1280}
+      defaultProps={DEFAULT_BRIEF}
+    />
     {/* 32 s, one continuous take — no cuts */}
     <Composition
       id="Autonomy"

@@ -10,3 +10,4 @@ public/audio/*.wav
 # guard: a mis-parameterised env var once wrote 209MB of chromium here
 undefined/
 .render-tools/
+studio/dist/
