@@ -86,3 +86,34 @@ There is no third option — `sans-serif` has nothing to fall back to.
 | 23 s | 690 | ≈ 66 s |
 
 Anything slower than this model is a regression — check it first.
+
+## §D  Download links — what actually serves an MP4
+
+Verified 2026-10-29 by fetching each URL from outside the sandbox:
+
+| Channel | MP4? | Note |
+|---|---|---|
+| `raw.githubusercontent.com/<repo>/<ref>/path` | **YES** | direct, no redirect. Often blocked/throttled on some ISP networks — this was the real cause of "links don't work". |
+| `github.com/<repo>/raw/<ref>/path` | YES | 302 → `raw.githubusercontent.com`, so it inherits that block. |
+| `cdn.jsdelivr.net/gh/<repo>@<ref>/path` | **NO** | returns `403 Package size exceeded the configured limit of 50 MB` for this repo (169 MB), and `500` on `.mp4` even from a ≤50 MB tag. Also caches the failure ~12 h. |
+| `cdn.statically.io/gh/...` | **NO** | `File type not allowed` for mp4. |
+| `rawcdn.githack.com/...` | redirect | 302 → raw.githubusercontent, so no help when raw is blocked. |
+| `ghfast.top/https://raw.githubusercontent.com/...` | **YES** | server-side proxy, different domain — best fallback. |
+| `gh-proxy.com/https://raw.githubusercontent.com/...` | **YES** | second proxy fallback. |
+
+**Rule:** always hand out the master on `ghfast.top` first, `gh-proxy.com` second, direct raw third.
+Put deliverables behind an **immutable tag** (`cdn-N`), not a branch, so links survive branch commits.
+
+```bash
+# build a delivery-only tag (does not touch the branch or any history)
+export GIT_INDEX_FILE=/tmp/cdn.idx && rm -f /tmp/cdn.idx
+git read-tree --empty
+git update-index --add cdn/vito-autonomy-master.mp4 cdn/vito-autonomy-lite.mp4
+T=$(git write-tree) && C=$(git commit-tree $T -m "cdn") && unset GIT_INDEX_FILE
+git tag -f cdn-4 $C && git push -q origin refs/tags/cdn-4 --force
+```
+
+**Rotation protocol (user's rule):** publish → user downloads → user confirms → `git rm` the file from the
+working tree + force the tag to a tree without it. Never rewrite history (`filter-branch`/`filter-repo`)
+and never delete the repo root; deleting a blob from a branch tip does **not** shrink packed history,
+it only removes it from future serving.
