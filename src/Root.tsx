@@ -13,6 +13,7 @@ import { ProductFilm, planProduct, planSeconds } from "./studio/premium";
 import { StoryFilm } from "./studio/StoryFilm";
 import { planStory, totalSeconds } from "./studio/story";
 import { VitoFilm as AgentFilm, framesFor as agentFrames } from "./studio/VitoFilm";
+import { Amaze } from "./studio/reel/Amaze";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -96,6 +97,16 @@ export const RemotionRoot: React.FC = () => (
       width={1080}
       height={1920}
       defaultProps={{ decision: think(AGENT_BRIEF, { seconds: 28 }) }}
+    />
+    {/* «إطار» — a hand-authored 24s film. Every frame written by hand. */}
+    <Composition
+      id="Amaze"
+      component={Amaze}
+      durationInFrames={720}
+      fps={30}
+      width={1080}
+      height={1920}
+      defaultProps={{}}
     />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
     <Composition id="NexusReel" component={Reel} durationInFrames={1080} fps={30} width={WIDTH} height={HEIGHT} />
