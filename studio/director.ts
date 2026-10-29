@@ -129,7 +129,7 @@ export const direct = async (
     return { decision: merged, note: `directed in ${(direction.ms / 1000).toFixed(1)}s` };
   } catch {
     onStructural?.(base);
-    return { decision: { ...base, by: "planner" }, note: "offline — the planner wrote this one alone" };
+    return { decision: { ...base, by: "planner" }, note: "written by the planner · the director did not answer" };
   }
 };
 
