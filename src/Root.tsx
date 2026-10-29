@@ -6,6 +6,8 @@ import { CF_DURATION } from "./cloudflare/palette";
 import { NexusAd } from "./nexus/NexusAd";
 import { Reel } from "./nexus3d/Reel";
 import { VitoFilm } from "./vito/VitoFilm";
+import { Autonomy } from "./autonomy/Autonomy";
+import { DURATION as AUTO_DUR, FPS as AUTO_FPS, W as AUTO_W, H as AUTO_H } from "./autonomy/space";
 import { DURATION as NX_DURATION, FPS_AUTH as NX_FPS } from "./nexus/palette";
 import { FontGate } from "./FontGate";
 import { DURATION, FPS, HEIGHT, WIDTH } from "./theme";
@@ -39,6 +41,15 @@ export const RemotionRoot: React.FC = () => (
       height={HEIGHT}
     />
     {/* VITO BYTE STUDIO — 32s flat, 60fps */}
+    {/* 32 s, one continuous take — no cuts */}
+    <Composition
+      id="Autonomy"
+      component={Autonomy}
+      durationInFrames={AUTO_DUR}
+      fps={AUTO_FPS}
+      width={AUTO_W}
+      height={AUTO_H}
+    />
     <Composition id="VitoFilm" component={VitoFilm} durationInFrames={1920} fps={60} width={WIDTH} height={HEIGHT} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
     <Composition id="NexusReel" component={Reel} durationInFrames={1080} fps={30} width={WIDTH} height={HEIGHT} />
