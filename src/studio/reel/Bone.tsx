@@ -74,6 +74,7 @@ const Page: React.FC<{ f: number; index: string; section: string; folio: string;
   const rule = p(f, 2, 20, Easing.bezier(0.65, 0, 0.35, 1));
   return (
     <AbsoluteFill style={{ background: PAPER }}>
+      <AbsoluteFill style={{ transform: `scale(${1 + 0.013 * cl(f / 240)})`, transformOrigin: "50% 42%" }}>
       <div style={{ position: "absolute", left: PAD, right: PAD, top: 118, height: 1, background: ink(0.22), transform: `scaleX(${rule})`, transformOrigin: "left" }} />
       <div
         style={{
@@ -114,6 +115,7 @@ const Page: React.FC<{ f: number; index: string; section: string; folio: string;
         <span>{folio}</span>
         <span>30 sec</span>
       </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };
@@ -121,9 +123,8 @@ const Page: React.FC<{ f: number; index: string; section: string; folio: string;
 /* --------------------------------------------------------------- 01 cost */
 
 const Cost: React.FC<{ f: number }> = ({ f }) => {
-  const num = p(f, 10, 46, Easing.bezier(0.22, 1, 0.36, 1));
-  const count = Math.round(lerp(0, 10000, num));
-  const comma = count.toLocaleString("en-US");
+  const num = p(f, 10, 44, Easing.bezier(0.22, 1, 0.36, 1));
+  const comma = "10,000";
   return (
     <Page f={f} index="01 / 05" section="the cost" folio="edge · ops">
       <div style={{ position: "absolute", left: PAD, top: 596, fontFamily: MONO, fontSize: S.mono, letterSpacing: "0.3em", color: ink(0.5), textTransform: "uppercase" }}>
@@ -140,9 +141,12 @@ const Cost: React.FC<{ f: number }> = ({ f }) => {
             lineHeight: 0.94,
             color: BONE,
             fontVariantNumeric: "tabular-nums",
+            opacity: num,
+            transform: `translateY(${(1 - num) * 10}px) scale(${1 + (1 - num) * 0.03})`,
+            transformOrigin: "left bottom",
           }}
         >
-          <span style={{ opacity: p(f, 8, 26), marginRight: "0.035em" }}>€</span>
+          <span style={{ opacity: p(f, 8, 26), marginRight: "0.062em" }}>€</span>
           {comma}
         </div>
         <div
