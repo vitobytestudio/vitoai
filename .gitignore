@@ -20,3 +20,6 @@ outbox/
 *master*.mp4
 *clean*.mp4
 cdn/*.mp4
+
+# the uploaded clip is a source, never a deliverable
+/public/inbox/

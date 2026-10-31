@@ -1,424 +1,288 @@
 /**
- * TALK — motion graphics over a real talking-head clip.
+ * TALK — a portrait film, built from the clip and from the plan.
  *
- * Source: 1280×720 · 24 fps · 8.04 s · five shots.
- * Cuts, read off the file itself: 1.958 / 3.500 / 5.042 / 6.417.
- * Speech bursts found in the waveform: 0.76–1.80, 2.08–3.24, 3.64–4.36,
- * 4.56–4.84, 5.12–6.24, 6.52–7.72.
+ * The plan (src/studio/reel/plans/talk.json, written by studio/brief.mjs) says:
+ *   grammar    portrait        speech covers 67 % of the clip, shots hold 1.6 s
+ *   ornament   2 of 3          two design devices per shot, never three
+ *   frame      ambient-letterbox  blurred self as the bed, sharp picture at 16:9
+ *   type       arabic 64 · latin 76 · label 13 · wide tracking
  *
- * Content rule: nothing is invented. The three callouts are the three
- * notifications actually legible on the phone in shot 2 — $29.00 / $15.50 /
- * $15.50 — and the total is their sum.
- *
- * Layout rule: the face is never covered. Everything that is not the
- * full-bleed takeover lives in a designed band above or below the picture
- * window, so type can be large without landing on a face.
+ * So the film does less than the last one, on purpose. No HUD, no shot counter,
+ * no scan lines, no progress rail, no browser chrome. The footage is the film;
+ * the type is a quiet witness. Two devices only: a rule that draws, and the
+ * ledger of the three payments that are actually on the phone.
  */
 import React from "react";
 import { AbsoluteFill, Audio, Easing, OffthreadVideo, staticFile, useCurrentFrame } from "remotion";
 import PALETTE from "./palettes/talk.json";
+import PLAN from "./plans/talk.json";
 
 export const FPS = 30;
-export const DURATION = 284; // 8.04 s of picture + a 1.4 s end card
+export const DURATION = 286;
 
 const W = 1080;
 const H = 1920;
-// Derived from the footage by studio/palette.mjs — the clip is blue-lit with
-// warm skin and a warm room, so the graphics are blue-steel with a sand
-// secondary. Nothing here is a house colour.
+
+/* every colour is read from the footage, not chosen */
 const INK = PALETTE.ink;
-const INK2 = PALETTE.ink2;
 const PAPER = PALETTE.paper;
-const MINT = PALETTE.accent;
-const BLUE = PALETTE.accent2;
+const ACCENT = PALETTE.accent;
+const SECOND = PALETTE.accent2;
+
 const AR = '"Cairo", "IBM Plex Sans Arabic", sans-serif';
 const LAT = '"Space Grotesk", "Sora", sans-serif';
 const MONO = '"JetBrains Mono", monospace';
 
-/** the picture window: 16:9, centred — 656 px of designed band above and below */
-const WIN = { x: 0, y: 656, w: 1080, h: 608 };
+/* geometry, from the plan */
+const PICTURE = { h: 608, top: 596 }; // 16:9 at 1080 wide
+const TYPE = PLAN.decision.type;
+
+/* timing, from the plan */
+const S = (sec: number) => Math.round(sec * FPS);
+const CUT = PLAN.measured.cuts.map(S);
+const VOICE = PLAN.measured.speech.map((s) => ({ a: S(s.start), b: S(s.end) }));
 
 const cl = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
-const EX = Easing.bezier(0.16, 1, 0.3, 1);
-const EI = Easing.bezier(0.7, 0, 0.84, 0);
-const EO = Easing.bezier(0.22, 0.9, 0.24, 1);
-const p = (f: number, a: number, b: number, fn: (t: number) => number = EX) => cl(fn(cl((f - a) / Math.max(1, b - a))));
+const SOFT = Easing.bezier(0.22, 1, 0.36, 1);
+const p = (f: number, a: number, b: number, fn: (t: number) => number = SOFT) => cl(fn(cl((f - a) / Math.max(1, b - a))));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/** source seconds → composition frames (the clip is retimed 24 → 30 fps) */
-const S = (sec: number) => Math.round(sec * FPS);
+/* ---------------------------------------------------------------- texture */
 
-const CUTS = [0, S(1.958), S(3.5), S(5.042), S(6.417), S(8.04)];
-
-const Grain: React.FC<{ f: number; o?: number }> = ({ f, o = 0.05 }) => (
+const Grain: React.FC<{ f: number }> = ({ f }) => (
   <div
     style={{
       position: "absolute",
-      inset: -40,
-      opacity: o,
+      inset: -30,
+      opacity: 0.03,
       mixBlendMode: "overlay",
-      pointerEvents: "none",
       backgroundImage:
-        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.55'/></svg>\")",
-      backgroundPosition: `${(f * 11) % 140}px ${(f * 7) % 140}px`,
+        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.6'/></svg>\")",
+      backgroundPosition: `${(f * 9) % 160}px ${(f * 5) % 160}px`,
     }}
   />
 );
 
-const Rise: React.FC<{ v: number; children: React.ReactNode; style?: React.CSSProperties }> = ({ v, children, style }) => {
-  const done = v >= 0.999;
-  return (
-    <span style={{ display: "block", clipPath: done ? undefined : `inset(-45% -14% ${(1 - v) * 100}% -14%)`, ...style }}>
-      <span style={{ display: "block" }}>{children}</span>
-    </span>
-  );
-};
-
-const Tag: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
-  <div style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.36em", color: "rgba(244,246,250,0.42)", ...style }}>{children}</div>
+/** text rises out of its own line, never out of a box that could cut a glyph */
+const Rise: React.FC<{ v: number; children: React.ReactNode; style?: React.CSSProperties }> = ({ v, children, style }) => (
+  <span style={{ display: "block", clipPath: v >= 0.999 ? undefined : `inset(-45% -14% ${(1 - v) * 100}% -14%)`, ...style }}>
+    <span style={{ display: "block" }}>{children}</span>
+  </span>
 );
 
-const Field: React.FC<{ f: number }> = ({ f }) => {
+/* ------------------------------------------------------------- the picture */
+
+/**
+ * ambient-letterbox: the same clip, blurred and pushed down, becomes the bed;
+ * the sharp 16:9 sits inside it. This is how a wide clip belongs in a tall
+ * frame without cropping a face or inventing chrome.
+ */
+const Picture: React.FC<{ f: number }> = ({ f }) => {
   const t = f / FPS;
+  const drift = 1 + 0.03 * Math.sin(t * 0.5);
+  const shot = Math.max(0, CUT.findIndex((c, i) => f >= c && f < CUT[i + 1]));
+  const local = f - (CUT[shot] ?? 0);
+  const push = lerp(1, 1.03, cl(local / 70));
+
   return (
-    <AbsoluteFill style={{ background: `linear-gradient(180deg, ${INK2} 0%, ${INK} 42%, #02040A 100%)` }}>
+    <>
+      <AbsoluteFill style={{ overflow: "hidden" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: -80,
+            transform: `scale(${drift})`,
+            filter: "blur(46px) saturate(1.15) brightness(0.42)",
+          }}
+        >
+          <OffthreadVideo src={staticFile("inbox/clip.mp4")} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted />
+        </div>
+        <AbsoluteFill style={{ background: `linear-gradient(180deg, ${INK}CC 0%, ${INK}55 34%, ${INK}00 52%, ${INK}66 74%, ${INK}F2 100%)` }} />
+      </AbsoluteFill>
+
       <div
         style={{
           position: "absolute",
-          left: "20%",
-          top: "14%",
-          width: "120vmax",
-          height: "120vmax",
-          transform: "translate(-50%,-50%)",
-          background: `radial-gradient(circle, ${MINT}22 0%, transparent 60%)`,
+          left: 0,
+          right: 0,
+          top: PICTURE.top,
+          height: PICTURE.h,
+          overflow: "hidden",
+          background: "#000",
         }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: `${70 + Math.sin(t * 0.5) * 8}%`,
-          top: `${78 + Math.cos(t * 0.4) * 6}%`,
-          width: "110vmax",
-          height: "110vmax",
-          transform: "translate(-50%,-50%)",
-          background: `radial-gradient(circle, ${BLUE}26 0%, transparent 62%)`,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: -40,
-          opacity: 0.6,
-          backgroundImage:
-            "linear-gradient(to right, rgba(244,246,250,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(244,246,250,0.045) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-          transform: `translateY(${(f * 0.5) % 80}px)`,
-        }}
-      />
-    </AbsoluteFill>
+      >
+        <div style={{ position: "absolute", inset: 0, transform: `scale(${push})` }}>
+          <OffthreadVideo src={staticFile("inbox/clip.mp4")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+        {/* the only grade on the picture: a soft fall at the edges */}
+        <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, ${INK}33, transparent 18%, transparent 78%, ${INK}99)` }} />
+      </div>
+    </>
   );
 };
 
-const Picture: React.FC<{ f: number }> = ({ f }) => {
-  const takeover = p(f, CUTS[2] - 2, CUTS[2] + 14) * (1 - p(f, CUTS[3] - 16, CUTS[3] - 2));
-  const win = {
-    x: lerp(WIN.x, 0, takeover),
-    y: lerp(WIN.y, 0, takeover),
-    w: lerp(WIN.w, W, takeover),
-    h: lerp(WIN.h, H, takeover),
-    r: lerp(22, 0, takeover),
-  };
-  const shot = Math.max(0, CUTS.findIndex((c, i) => f >= c && f < CUTS[i + 1]));
-  const localShot = f - (CUTS[shot] ?? 0);
-  const push = lerp(1, 1.045, cl(localShot / 60));
+/* ---------------------------------------------------------- device one: rule */
+
+const Rule: React.FC<{ f: number; from: number; w?: number; color?: string }> = ({ f, from, w = 132, color = ACCENT }) => (
+  <div style={{ width: w, height: 1, background: color, opacity: 0.55, transform: `scaleX(${p(f, from, from + 22)})`, transformOrigin: "right 50%" }} />
+);
+
+/* -------------------------------------------------------- device two: ledger */
+
+// the three payments legible on the phone in shot 2
+const LEDGER = [
+  { amt: "29.00", ar: "اشتراك شهري", at: VOICE[1]?.a ?? S(2.08) },
+  { amt: "15.50", ar: "عمولة", at: VOICE[2]?.a ?? S(3.64) },
+  { amt: "15.50", ar: "عمولة", at: VOICE[4]?.a ?? S(5.12) },
+];
+const TOTAL = 29 + 15.5 + 15.5;
+
+const Ledger: React.FC<{ f: number }> = ({ f }) => {
+  const settle = p(f, S(6.52), S(6.52) + 26);
+  const lift = lerp(0, -34, settle);
+  const dim = lerp(1, 0.55, settle);
 
   return (
     <div
       style={{
         position: "absolute",
-        left: win.x,
-        top: win.y,
-        width: win.w,
-        height: win.h,
-        borderRadius: win.r,
-        overflow: "hidden",
-        background: "#000",
-        boxShadow: takeover < 0.5 ? "0 40px 120px rgba(0,0,0,0.7)" : undefined,
+        left: 84,
+        right: 84,
+        top: PICTURE.top + PICTURE.h + 92,
+        direction: "rtl",
+        transform: `translateY(${lift}px)`,
       }}
     >
-      <div style={{ position: "absolute", inset: 0, transform: `scale(${push})` }}>
-        <OffthreadVideo src={staticFile("inbox/clip.mp4")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,6,11,0.18), transparent 30%, transparent 66%, rgba(4,6,11,0.55))" }} />
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(2,4,10,0.55) 100%)" }} />
-    </div>
-  );
-};
-
-const NOTES = [
-  { amt: 29, label: "اشتراك شهري", at: S(2.12), tag: "NEW MONTHLY SUBSCRIPTION" },
-  { amt: 15.5, label: "عمولة", at: S(2.62), tag: "COMMISSION RECEIVED" },
-  { amt: 15.5, label: "عمولة", at: S(3.12), tag: "COMMISSION RECEIVED" },
-];
-
-const BandTop: React.FC<{ f: number; o: number }> = ({ f, o }) => {
-  const sum = NOTES.reduce((n, x) => n + x.amt * p(f, x.at, x.at + 18, EO), 0);
-  const inShot2 = p(f, CUTS[1] - 6, CUTS[1] + 10);
-  const shotN = Math.max(1, CUTS.findIndex((c, i) => f >= c && f < CUTS[i + 1]) + 1);
-
-  return (
-    <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: WIN.y, padding: "96px 72px 0", opacity: o }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: p(f, 6, 24) }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 9, height: 9, borderRadius: 9, background: MINT, boxShadow: `0 0 16px ${MINT}`, transform: `scale(${p(f, 8, 22)})` }} />
-          <Tag style={{ color: "rgba(244,246,250,0.55)" }}>TAKE 01</Tag>
-        </div>
-        <Tag>{String(shotN).padStart(2, "0")} / 05</Tag>
-      </div>
-
-      <div style={{ marginTop: 54 }}>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
-          <span style={{ fontFamily: LAT, fontSize: 150, fontWeight: 700, color: PAPER, letterSpacing: "-0.055em", lineHeight: 0.86 }}>
-            ${sum.toFixed(2)}
-          </span>
-          <span style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.3em", color: MINT, paddingBottom: 20 }}>USD</span>
-        </div>
-        <div style={{ marginTop: 18, height: 1, background: "rgba(244,246,250,0.14)", transform: `scaleX(${p(f, 16, 60)})`, transformOrigin: "0 50%" }} />
-      </div>
-
-      <div style={{ marginTop: 30, display: "flex", flexDirection: "column", gap: 20 }}>
-        {NOTES.map((n, i) => {
-          const on = p(f, n.at, n.at + 14, EO);
+      <div style={{ display: "flex", flexDirection: "column", gap: 26, opacity: dim }}>
+        {LEDGER.map((row, i) => {
+          const v = p(f, row.at, row.at + 20);
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 18, opacity: on, transform: `translateX(${(1 - on) * 34}px)` }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  background: `rgba(79,227,176,${0.16 + 0.1 * on})`,
-                  border: `1px solid ${MINT}66`,
-                  display: "grid",
-                  placeContent: "center",
-                }}
-              >
-                <div style={{ width: 10, height: 10, borderRadius: 6, background: MINT, opacity: on }} />
+            <div key={i} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", opacity: v }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+                <span style={{ fontFamily: LAT, fontSize: TYPE.latin * 0.62, fontWeight: 500, color: PAPER, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums" }}>
+                  ${row.amt}
+                </span>
+                <span style={{ fontFamily: AR, fontSize: TYPE.arabic * 0.52, fontWeight: 700, color: `${PAPER}B3` }}>{row.ar}</span>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.28em", color: "rgba(244,246,250,0.5)" }}>{n.tag}</div>
-                <div style={{ fontFamily: AR, fontSize: 30, fontWeight: 700, color: PAPER, marginTop: 4, direction: "rtl" }}>{n.label}</div>
-              </div>
-              <div style={{ fontFamily: LAT, fontSize: 44, fontWeight: 700, color: MINT, letterSpacing: "-0.02em" }}>+${n.amt.toFixed(2)}</div>
+              <div style={{ width: 40, height: 1, background: `${PAPER}33` }} />
             </div>
           );
         })}
       </div>
 
-      <div
-        style={{
-          position: "absolute",
-          right: 96,
-          bottom: 8,
-          width: 220,
-          height: 220,
-          borderRadius: "50%",
-          border: `2px solid ${MINT}`,
-          opacity: inShot2 * 0.5 * (1 - p(f, CUTS[2], CUTS[2] + 20)),
-          transform: `scale(${lerp(0.7, 1.6, p(f, CUTS[1], CUTS[2], EI))})`,
-        }}
-      />
-    </div>
-  );
-};
-
-const BandBottom: React.FC<{ f: number; o: number }> = ({ f, o }) => {
-  const beats = [
-    { at: CUTS[0], label: "الفكرة" },
-    { at: CUTS[1], label: "الإشعارات" },
-    { at: CUTS[2], label: "التوزيع" },
-    { at: CUTS[3], label: "النتيجة" },
-    { at: CUTS[4], label: "الخلاصة" },
-  ];
-  const i = Math.max(0, CUTS.findIndex((c, k) => f >= c && f < CUTS[k + 1]));
-  const beat = beats[i] ?? beats[0];
-  const local = f - beat.at;
-  const progress = cl(f / S(8.04));
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: WIN.y + WIN.h,
-        height: H - (WIN.y + WIN.h),
-        padding: "0 72px",
-        direction: "rtl",
-        opacity: o,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-      }}
-    >
-      <Rise v={p(local, 2, 18)}>
-        <div style={{ fontFamily: AR, fontSize: 82, fontWeight: 800, color: PAPER, lineHeight: 1.2 }}>{beat.label}</div>
-      </Rise>
-      <div style={{ marginTop: 28, display: "flex", gap: 10 }}>
-        {beats.map((b, k) => (
-          <div key={k} style={{ flex: 1, height: 5, background: "rgba(244,246,250,0.14)", overflow: "hidden" }}>
-            <div
-              style={{
-                height: "100%",
-                width: `${cl((f - b.at) / ((beats[k + 1]?.at ?? S(8.04)) - b.at)) * 100}%`,
-                background: k === i ? MINT : k < i ? "rgba(79,227,176,0.5)" : "transparent",
-              }}
-            />
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", direction: "ltr" }}>
-        <Tag>VITO BYTE · MOTION</Tag>
-        <div style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.18em", color: "rgba(244,246,250,0.5)" }}>{progress.toFixed(2)} / 8.04</div>
-      </div>
-    </div>
-  );
-};
-
-const Takeover: React.FC<{ f: number }> = ({ f }) => {
-  const a = CUTS[2];
-  const b = CUTS[3];
-  const local = f - a;
-  const v = p(f, a + 2, a + 24, EO);
-  const out = p(f, b - 18, b - 4, EI);
-  if (v <= 0.001 || out >= 1) return null;
-  return (
-    <AbsoluteFill style={{ opacity: v * (1 - out), pointerEvents: "none" }}>
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(180deg, rgba(2,4,10,0.82) 0%, rgba(2,4,10,0.24) 26%, transparent 42%, rgba(2,4,10,0.2) 62%, rgba(2,4,10,0.9) 88%, rgba(2,4,10,0.96) 100%)",
-        }}
-      />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 92, textAlign: "center" }}>
-        <div style={{ fontFamily: LAT, fontSize: 190, fontWeight: 700, color: PAPER, letterSpacing: "-0.06em", lineHeight: 0.92 }}>$60</div>
-        <div style={{ fontFamily: MONO, fontSize: 16, letterSpacing: "0.46em", color: MINT, marginTop: 12, marginRight: "-0.46em" }}>
-          IN 3 NOTIFICATIONS
+      {/* the sum, arriving once the third line has landed */}
+      <div style={{ marginTop: 34, opacity: settle, transform: `translateY(${(1 - settle) * 18}px)` }}>
+        <Rule f={f} from={S(6.52)} w={560} />
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 22 }}>
+          <span style={{ fontFamily: LAT, fontSize: TYPE.latin * 1.5, fontWeight: 700, color: PAPER, letterSpacing: "-0.04em", fontVariantNumeric: "tabular-nums" }}>
+            ${TOTAL.toFixed(2)}
+          </span>
+          <span style={{ fontFamily: AR, fontSize: TYPE.arabic * 0.66, fontWeight: 800, color: ACCENT, paddingBottom: 10 }}>في ثلاث إشعارات</span>
         </div>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 96, textAlign: "center", direction: "rtl", padding: "0 56px" }}>
-        <Rise v={p(local, 6, 24)}>
-          <div style={{ fontFamily: AR, fontSize: 112, fontWeight: 900, color: PAPER, lineHeight: 1.18 }}>توزيع تلقائي</div>
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------ the quiet top */
+
+const TopLine: React.FC<{ f: number }> = ({ f }) => {
+  const inShot = Math.max(1, CUT.findIndex((c, i) => f >= c && f < CUT[i + 1]) + 1);
+  return (
+    <div style={{ position: "absolute", left: 84, right: 84, top: 116 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", opacity: p(f, 6, 30) }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 6, height: 6, borderRadius: 6, background: ACCENT }} />
+          <span style={{ fontFamily: MONO, fontSize: TYPE.label, letterSpacing: "0.34em", color: `${PAPER}77` }}>VITO BYTE</span>
+        </div>
+        <span style={{ fontFamily: MONO, fontSize: TYPE.label, letterSpacing: "0.34em", color: `${PAPER}44` }}>
+          {String(inShot).padStart(2, "0")} · {String(CUT.length - 1).padStart(2, "0")}
+        </span>
+      </div>
+      <div style={{ marginTop: 18, height: 1, background: `${PAPER}1F` }} />
+    </div>
+  );
+};
+
+/* ------------------------------------------------------------- the end card */
+
+const EndCard: React.FC<{ f: number }> = ({ f }) => {
+  const a = CUT[CUT.length - 1] - 2;
+  const local = f - a;
+  if (local < 0) return null;
+  return (
+    <AbsoluteFill style={{ background: INK }}>
+      <div
+        style={{
+          position: "absolute",
+          left: "50%",
+          top: "38%",
+          width: "130vmax",
+          height: "130vmax",
+          transform: "translate(-50%,-50%)",
+          background: `radial-gradient(circle, ${ACCENT}1F 0%, transparent 58%)`,
+        }}
+      />
+      <div style={{ position: "absolute", left: 0, right: 0, top: "44%", textAlign: "center", direction: "rtl" }}>
+        <Rise v={p(local, 2, 26)}>
+          <div style={{ fontFamily: AR, fontSize: 56, fontWeight: 700, color: `${PAPER}AA`, lineHeight: 1.3 }}>إجمالي ما وصل</div>
         </Rise>
-        <Rise v={p(local, 14, 32)}>
-          <div style={{ fontFamily: AR, fontSize: 112, fontWeight: 900, color: MINT, lineHeight: 1.18 }}>على كل اشتراك</div>
+        <div style={{ fontFamily: LAT, fontSize: 196, fontWeight: 700, color: PAPER, letterSpacing: "-0.055em", lineHeight: 1, marginTop: 10, fontVariantNumeric: "tabular-nums" }}>
+          ${lerp(0, TOTAL, p(local, 6, 34)).toFixed(2)}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 26 }}>
+          <div style={{ width: lerp(0, 300, p(local, 14, 40)), height: 1, background: `${ACCENT}88` }} />
+        </div>
+        <Rise v={p(local, 20, 44)}>
+          <div style={{ fontFamily: AR, fontSize: 44, fontWeight: 800, color: ACCENT, marginTop: 26 }}>من ثلاثة إشعارات.</div>
         </Rise>
       </div>
-      {[0, 1, 2].map((k) => (
-        <div
-          key={k}
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: `${20 + k * 30}%`,
-            width: 1,
-            background: `linear-gradient(180deg, transparent, ${k === 1 ? MINT : "rgba(244,246,250,0.3)"}, transparent)`,
-            opacity: 0.45,
-          }}
-        />
-      ))}
+      <div style={{ position: "absolute", left: 0, right: 0, bottom: 120, textAlign: "center", opacity: p(local, 40, 66) }}>
+        <span style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.42em", color: `${PAPER}55` }}>MOTION · VITO BYTE</span>
+      </div>
     </AbsoluteFill>
   );
 };
 
+/* ------------------------------------------------------------ opening lift */
+
 const Boot: React.FC<{ f: number }> = ({ f }) => {
-  const lift = p(f, 8, 22, EO);
+  const lift = p(f, 6, 22, Easing.bezier(0.4, 0, 0.2, 1));
   if (lift >= 1) return null;
   return (
     <AbsoluteFill style={{ background: INK, transform: `translateY(${-100 * lift}%)` }}>
       <div style={{ position: "absolute", inset: 0, display: "grid", placeContent: "center" }}>
-        <div style={{ display: "flex", gap: 8 }}>
-          {[0, 1, 2].map((k) => (
-            <div
-              key={k}
-              style={{
-                width: 10,
-                height: lerp(10, 54, p(f, 2 + k * 2, 10 + k * 2, EO)),
-                background: k === 1 ? MINT : PAPER,
-                opacity: 0.8,
-              }}
-            />
-          ))}
-        </div>
+        <div style={{ width: lerp(10, 120, p(f, 2, 14)), height: 1, background: ACCENT, opacity: 0.8 }} />
       </div>
     </AbsoluteFill>
   );
 };
 
-const EndCard: React.FC<{ f: number }> = ({ f }) => {
-  const a = S(8.04) - 2;
-  const local = f - a;
-  if (local < 0) return null;
-  const v = p(local, 0, 16, EO);
-  return (
-    <AbsoluteFill style={{ background: INK }}>
-      <Field f={f} />
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontFamily: LAT, fontSize: 34, letterSpacing: "0.4em", color: "rgba(244,246,250,0.5)", opacity: v }}>TOTAL</div>
-        <div style={{ fontFamily: LAT, fontSize: 240, fontWeight: 700, color: PAPER, letterSpacing: "-0.06em", lineHeight: 0.98, marginTop: 6 }}>
-          ${lerp(0, 60, p(local, 2, 26, EO)).toFixed(2)}
-        </div>
-        <div style={{ width: lerp(0, 420, p(local, 8, 34)), height: 1, background: `${MINT}88`, margin: "30px 0" }} />
-        <Rise v={p(local, 14, 34)}>
-          <div style={{ fontFamily: AR, fontSize: 54, fontWeight: 800, color: MINT, direction: "rtl" }}>في ثلاث إشعارات.</div>
-        </Rise>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 14,
-            letterSpacing: "0.42em",
-            color: "rgba(244,246,250,0.36)",
-            marginTop: 44,
-            opacity: p(local, 26, 46),
-          }}
-        >
-          MOTION BY VITO BYTE
-        </div>
-      </div>
-    </AbsoluteFill>
-  );
-};
+/* ------------------------------------------------------------------- film */
 
 export type TalkProps = { score?: string };
 
 export const Talk: React.FC<TalkProps> = ({ score }) => {
   const f = useCurrentFrame();
-  const last = [...CUTS].reverse().find((c) => f >= c && c > 0) ?? -99;
+  const endAt = CUT[CUT.length - 1];
+  // a single frame of soft light on a cut, nothing more
+  const last = [...CUT].reverse().find((c) => f >= c && c > 0) ?? -99;
   const d = f - last;
-  const amp = d < 6 ? 7 * (1 - d / 6) ** 2 : 0;
-  const shake = `translate(${Math.sin(d * 2.7) * amp}px, ${Math.cos(d * 3.9) * amp * 0.8}px)`;
-  const bloom = d === 0 ? 0.1 : 0;
-  const vBands = 1 - p(f, CUTS[2] - 2, CUTS[2] + 10, EO) * (1 - p(f, CUTS[3] - 16, CUTS[3] - 2, EI));
+  const bloom = d === 0 && f > 10 ? 0.05 : 0;
 
   return (
     <AbsoluteFill style={{ background: INK, overflow: "hidden" }}>
-      <Field f={f} />
-      <AbsoluteFill style={{ transform: shake }}>
-        <Picture f={f} />
-        {f < S(8.04) ? (
-          <>
-            <BandTop f={f} o={vBands} />
-            <BandBottom f={f} o={vBands} />
-          </>
-        ) : null}
-        <Takeover f={f} />
-      </AbsoluteFill>
+      <Picture f={f} />
+      {f < endAt ? (
+        <>
+          <TopLine f={f} />
+          <Ledger f={f} />
+        </>
+      ) : null}
       {bloom ? <AbsoluteFill style={{ background: `rgba(244,246,250,${bloom})` }} /> : null}
       <Boot f={f} />
       <EndCard f={f} />
-      <Grain f={f} o={0.055} />
+      <Grain f={f} />
       {score && score.length > 32 ? <Audio src={score} /> : null}
       <Audio src={staticFile("inbox/clip.mp4")} volume={1} />
     </AbsoluteFill>
