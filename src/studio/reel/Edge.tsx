@@ -262,16 +262,38 @@ const Scene1: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
                     letterSpacing: "-0.045em",
                     lineHeight: 1.04,
                     color: i === 1 ? EMERALD : PAPER,
-                    clipPath: v >= 0.999 ? undefined : `inset(-30% -10% ${(1 - v) * 100}% -10%)`,
+                    clipPath: v >= 0.999 ? undefined : `inset(-40% -12% ${(1 - v) * 100}% -12%)`,
                     transform: `translateY(${(1 - v) * 18}%)`,
                     paddingBottom: "0.06em",
                   }}
                 >
-                  {w2}
+                  {i === 0 ? (
+                    <>
+                      <span style={{ letterSpacing: "0", marginRight: "0.06em" }}>€</span>
+                      {w2.slice(1)}
+                    </>
+                  ) : (
+                    w2
+                  )}
                 </span>
               </div>
             );
           })}
+          <div
+            style={{
+              marginTop: 52,
+              fontFamily: LAT,
+              fontSize: 34,
+              lineHeight: 1.4,
+              color: `${GREY}`,
+              opacity: p(f, 58, 86),
+              maxWidth: 760,
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            Most founders burn this before their first real user.
+          </div>
         </div>
       </AbsoluteFill>
 
@@ -743,14 +765,15 @@ const Scene4: React.FC<{ f: number; mode: Mode }> = ({ f }) => {
           right: 0,
           top: HORIZON + 92,
           textAlign: "center",
-          fontFamily: MONO,
-          fontSize: 15,
-          letterSpacing: "0.34em",
-          color: `${GREY}CC`,
-          opacity: p(f, S4 + 60, S4 + 90),
+          fontFamily: LAT,
+          fontSize: 34,
+          lineHeight: 1.4,
+          color: `${PAPER}AA`,
+          padding: "0 96px",
+          opacity: p(f, S4 + 58, S4 + 88),
         }}
       >
-        SHIP · MEASURE · SCALE
+        Lean teams outrun agencies ten times their size.
       </div>
 
       <Vignette s={0.72} />
@@ -810,6 +833,24 @@ const Scene5: React.FC<{ f: number; mode: Mode }> = ({ f }) => {
           </div>
         </div>
       </div>
+
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 232,
+          textAlign: "center",
+          fontFamily: MONO,
+          fontSize: 12,
+          letterSpacing: "0.42em",
+          color: `${PAPER}44`,
+          opacity: p(local, 96, 122),
+        }}
+      >
+        VITO BYTE · MOTION SYSTEM
+      </div>
+
       <Vignette s={0.66} />
     </AbsoluteFill>
   );
