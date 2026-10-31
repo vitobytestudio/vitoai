@@ -250,7 +250,7 @@ const Scene1: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center" }}>
         <div style={{ textAlign: "center" }}>
           {words.map((w2, i) => {
-            const v = p(f, 34 + i * 9, 52 + i * 9, OUT);
+            const v = p(f, 22 + i * 8, 40 + i * 8, OUT);
             return (
               <div key={i} style={{ overflow: "visible" }}>
                 <span
@@ -286,7 +286,7 @@ const Scene1: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
               fontSize: 34,
               lineHeight: 1.4,
               color: `${GREY}`,
-              opacity: p(f, 58, 86),
+              opacity: p(f, 46, 74),
               maxWidth: 760,
               marginLeft: "auto",
               marginRight: "auto",
@@ -621,31 +621,62 @@ const Keyboard: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-const Flow: React.FC<{ f: number }> = ({ f }) => (
-  <div style={{ position: "absolute", left: 0, right: 0, top: STAGE_T, height: STAGE_H, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-    {[...Array(9)].map((_, i) => {
-      const t = ((f * 0.8 + i * 37) % 100) / 100;
-      return (
-        <React.Fragment key={i}>
-          <div style={{ position: "relative", height: 74, margin: "0 70px" }}>
-            <div style={{ position: "absolute", left: 0, right: 0, top: 37, height: 1, background: `${PAPER}14` }} />
-            <div
-              style={{
-                position: "absolute",
-                left: `calc(${t * 100}% - 45px)`,
-                top: 34,
-                width: 90,
-                height: 6,
-                background: `linear-gradient(90deg, transparent, ${i % 3 === 0 ? EMERALD : PAPER}, transparent)`,
-                opacity: 0.9,
-              }}
-            />
-          </div>
-        </React.Fragment>
-      );
-    })}
-  </div>
-);
+const Flow: React.FC<{ f: number }> = ({ f }) => {
+  const RUN = 78;
+  const rows = [...Array(9)];
+  return (
+    <div style={{ position: "absolute", left: 0, right: 0, top: STAGE_T, height: STAGE_H, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <div style={{ position: "absolute", left: 70, top: 40, fontFamily: MONO, fontSize: 13, letterSpacing: "0.3em", color: `${EMERALD}CC` }}>
+        1,284 EVENTS / MIN
+      </div>
+      <div style={{ position: "relative", height: 9 * RUN }}>
+        {rows.map((_, i) => {
+          const t = ((f * 1.6 + i * 37) % 100) / 100;
+          return (
+            <div key={i} style={{ position: "absolute", left: 70, right: 130, top: i * RUN + 36, height: 1, background: `${PAPER}14` }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: `calc(${t * 100}% - 45px)`,
+                  top: -2,
+                  width: 90,
+                  height: 5,
+                  background: `linear-gradient(90deg, transparent, ${i % 3 === 0 ? EMERALD : PAPER}, transparent)`,
+                  opacity: 0.9,
+                }}
+              />
+            </div>
+          );
+        })}
+        {/* everything the streams carry lands on one edge node */}
+        <div
+          style={{
+            position: "absolute",
+            right: 120,
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: `linear-gradient(180deg, ${EMERALD}00, ${EMERALD}, ${EMERALD}00)`,
+            opacity: 0.55,
+            boxShadow: `0 0 18px ${EMERALD}66`,
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: 117,
+            width: 8,
+            height: 8,
+            borderRadius: 8,
+            background: PAPER,
+            boxShadow: `0 0 14px ${PAPER}`,
+            top: ((f * 5) % 100) / 100 * (9 * RUN - 8),
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const Scene3: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
   const beat = 24; // 0.8 s
