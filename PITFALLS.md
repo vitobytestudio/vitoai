@@ -285,3 +285,20 @@ it only removes it from future serving.
   `plate()` on the same node lands content at the flex start corner when the
   transform resets the containing block. Absolute coordinates per block, one
   transform per wrapper, verified with a still.
+
+## EDGE — three traps that each cost a render
+
+- **The `€` was a tofu box, and no font was missing it.** The woff2 subsets did
+  carry U+20AC; the `unicode-range` the fonts are registered with stopped at
+  U+2000-206F, so the browser refused the face and fell through to nothing.
+  `src/fonts.ts` now appends `U+20A0-20CF` for the three Latin families. If a
+  glyph renders as a box, check the *range* before you check the *font*.
+- **Space Grotesk's counters are squarish, and squarish looks like clipping.**
+  At 132 px the flat tops of `W A S T E D` and of `0` read exactly like a
+  `clip-path` bug. Ten minutes went into "fixing" a font that was fine. Settle
+  it with pixels, not eyes: crop a column and print the luminance ramp —
+  a real clip gives a 1 px step, a glyph gives a 5 px anti-aliased ramp.
+- **A whip pan with nothing to blur is a black dropout.** Cutting to a new
+  scene and sliding that scene in leaves 3-4 frames of empty frame. A whip needs
+  the *light crossing the lens*: a wide, heavily blurred white→emerald streak at
+  0.4 opacity, fading with the move. Same for the mid-scene cuts.
