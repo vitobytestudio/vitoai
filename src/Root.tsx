@@ -17,6 +17,7 @@ import { Amaze } from "./studio/reel/Amaze";
 import { Showreel, DURATION as REEL_DURATION } from "./studio/reel/Showreel";
 import { Spot, DURATION as SPOT_DURATION } from "./studio/reel/Spot";
 import { Talk, DURATION as TALK_DURATION } from "./studio/reel/Talk";
+import { Specimen, DURATION as SPECIMEN_DURATION } from "./studio/reel/Specimen";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -111,6 +112,8 @@ export const RemotionRoot: React.FC = () => (
       height={1920}
       defaultProps={{}}
     />
+    {/* SPECIMEN — 18s of pure motion language, no footage */}
+    <Composition id="Specimen" component={Specimen} durationInFrames={SPECIMEN_DURATION} fps={30} width={1080} height={1920} />
     {/* TALK — motion graphics over a talking-head clip */}
     <Composition id="Talk" component={Talk} durationInFrames={TALK_DURATION} fps={30} width={1080} height={1920} />
     {/* VITO BYTE STUDIO — 36s spot, cut to a 120 BPM score */}

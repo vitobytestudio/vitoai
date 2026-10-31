@@ -1,5 +1,7 @@
 # Films given to the client by link. These never get pruned.
+motion-language-1080x1920.mp4
 talk-portrait-1080x1920.mp4
 vito-byte-studio-1080x1920.mp4
+nexus-showreel-1080x1920.mp4
 nexus-showreel-1080x1920.mp4
 nexus-etar-1080x1920.mp4

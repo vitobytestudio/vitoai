@@ -266,3 +266,22 @@ it only removes it from future serving.
 - **Freezing a descending counter at a value the slate does not agree with is
   the fastest way to look careless.** Every displayed number must be derived
   from one source of truth.
+
+## Motion language — the five failures behind "it feels dry"
+
+- **A reveal is not a move.** Every element entering with the same 0.16/1/0.3/1
+  curve at 18 frames makes a frame that *appears*. Movement needs a
+  destination that keeps travelling after the element has arrived: the camera.
+- **A static plate has no depth, however nice the type.** `plate(depth)` with
+  three separations (0.2 / 0.55 / 0.9) and a camera push is the difference
+  between a poster and a shot.
+- **Cuts that start from zero kill velocity.** A cut must carry motion across
+  it — a 6-frame whip, a mask-match, or a scale-through. A hard cut plus a
+  settle from rest is a slideshow.
+- **Rotation on a full-frame wrapper moves type off its mark.** On a 1920px
+  plane a 2° rotateY shifts a headline by 30+ px. Rotate *elements*, translate
+  and scale *wrappers*. This cost three renders to find.
+- **Flex centring plus a transform is not centring.** `display:flex` +
+  `plate()` on the same node lands content at the flex start corner when the
+  transform resets the containing block. Absolute coordinates per block, one
+  transform per wrapper, verified with a still.
