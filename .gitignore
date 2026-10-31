@@ -15,3 +15,8 @@ studio/dist/
 # upload inbox / hand-back folder — big media, never committed
 inbox/
 outbox/
+
+# heavy exports that must never be committed again
+*master*.mp4
+*clean*.mp4
+cdn/*.mp4

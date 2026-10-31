@@ -16,17 +16,21 @@
  */
 import React from "react";
 import { AbsoluteFill, Audio, Easing, OffthreadVideo, staticFile, useCurrentFrame } from "remotion";
+import PALETTE from "./palettes/talk.json";
 
 export const FPS = 30;
 export const DURATION = 284; // 8.04 s of picture + a 1.4 s end card
 
 const W = 1080;
 const H = 1920;
-const INK = "#04060B";
-const INK2 = "#0A1020";
-const PAPER = "#F4F6FA";
-const MINT = "#4FE3B0";
-const BLUE = "#7EA2FF";
+// Derived from the footage by studio/palette.mjs — the clip is blue-lit with
+// warm skin and a warm room, so the graphics are blue-steel with a sand
+// secondary. Nothing here is a house colour.
+const INK = PALETTE.ink;
+const INK2 = PALETTE.ink2;
+const PAPER = PALETTE.paper;
+const MINT = PALETTE.accent;
+const BLUE = PALETTE.accent2;
 const AR = '"Cairo", "IBM Plex Sans Arabic", sans-serif';
 const LAT = '"Space Grotesk", "Sora", sans-serif';
 const MONO = '"JetBrains Mono", monospace';
@@ -248,9 +252,12 @@ const BandBottom: React.FC<{ f: number; o: number }> = ({ f, o }) => {
         right: 0,
         top: WIN.y + WIN.h,
         height: H - (WIN.y + WIN.h),
-        padding: "58px 72px 0",
+        padding: "0 72px",
         direction: "rtl",
         opacity: o,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
       }}
     >
       <Rise v={p(local, 2, 18)}>
