@@ -1,0 +1,415 @@
+{
+  "generator": "vitoai/export_captions.py",
+  "fps": 60,
+  "model": "authored-alignment (whisper-schema compatible)",
+  "language": "ar",
+  "word_count": 29,
+  "segments": [
+    {
+      "id": 0,
+      "start": 0.1333,
+      "end": 0.5,
+      "words": [
+        {
+          "word": "من",
+          "start": 0.1333,
+          "end": 0.5,
+          "frame_start": 8,
+          "frame_end": 30
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "start": 0.5,
+      "end": 1.4333,
+      "words": [
+        {
+          "word": "الفكرة",
+          "start": 0.5,
+          "end": 1.4333,
+          "frame_start": 30,
+          "frame_end": 86
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "start": 1.4667,
+      "end": 1.8,
+      "words": [
+        {
+          "word": "إلى",
+          "start": 1.4667,
+          "end": 1.8,
+          "frame_start": 88,
+          "frame_end": 108
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "start": 1.8,
+      "end": 2.5333,
+      "words": [
+        {
+          "word": "فيديو",
+          "start": 1.8,
+          "end": 2.5333,
+          "frame_start": 108,
+          "frame_end": 152
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "start": 2.5667,
+      "end": 3.3667,
+      "words": [
+        {
+          "word": "خارق.",
+          "start": 2.5667,
+          "end": 3.3667,
+          "frame_start": 154,
+          "frame_end": 202
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "start": 3.5667,
+      "end": 4.1667,
+      "words": [
+        {
+          "word": "ساعات",
+          "start": 3.5667,
+          "end": 4.1667,
+          "frame_start": 214,
+          "frame_end": 250
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "start": 4.2,
+      "end": 4.4667,
+      "words": [
+        {
+          "word": "من",
+          "start": 4.2,
+          "end": 4.4667,
+          "frame_start": 252,
+          "frame_end": 268
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "start": 4.4667,
+      "end": 5.0,
+      "words": [
+        {
+          "word": "الرندر",
+          "start": 4.4667,
+          "end": 5.0,
+          "frame_start": 268,
+          "frame_end": 300
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "start": 5.1,
+      "end": 5.5,
+      "words": [
+        {
+          "word": "ملفات",
+          "start": 5.1,
+          "end": 5.5,
+          "frame_start": 306,
+          "frame_end": 330
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "start": 5.5,
+      "end": 5.9333,
+      "words": [
+        {
+          "word": "تالفة",
+          "start": 5.5,
+          "end": 5.9333,
+          "frame_start": 330,
+          "frame_end": 356
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "start": 6.0,
+      "end": 6.5333,
+      "words": [
+        {
+          "word": "ومواعيد",
+          "start": 6.0,
+          "end": 6.5333,
+          "frame_start": 360,
+          "frame_end": 392
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "start": 6.5333,
+      "end": 6.9667,
+      "words": [
+        {
+          "word": "بتضيع",
+          "start": 6.5333,
+          "end": 6.9667,
+          "frame_start": 392,
+          "frame_end": 418
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "start": 7.2,
+      "end": 11.6667,
+      "words": [
+        {
+          "word": "VitoAI",
+          "start": 7.2,
+          "end": 11.6667,
+          "frame_start": 432,
+          "frame_end": 700
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "start": 9.4333,
+      "end": 9.8667,
+      "words": [
+        {
+          "word": "استوديو",
+          "start": 9.4333,
+          "end": 9.8667,
+          "frame_start": 566,
+          "frame_end": 592
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "start": 9.8667,
+      "end": 10.3,
+      "words": [
+        {
+          "word": "الحركة",
+          "start": 9.8667,
+          "end": 10.3,
+          "frame_start": 592,
+          "frame_end": 618
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "start": 10.3,
+      "end": 10.8,
+      "words": [
+        {
+          "word": "البرمجي",
+          "start": 10.3,
+          "end": 10.8,
+          "frame_start": 618,
+          "frame_end": 648
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "start": 10.8667,
+      "end": 11.0,
+      "words": [
+        {
+          "word": "كل",
+          "start": 10.8667,
+          "end": 11.0,
+          "frame_start": 652,
+          "frame_end": 660
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "start": 11.0,
+      "end": 11.2333,
+      "words": [
+        {
+          "word": "شيء…",
+          "start": 11.0,
+          "end": 11.2333,
+          "frame_start": 660,
+          "frame_end": 674
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "start": 11.2333,
+      "end": 11.5333,
+      "words": [
+        {
+          "word": "بالكود.",
+          "start": 11.2333,
+          "end": 11.5333,
+          "frame_start": 674,
+          "frame_end": 692
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "start": 11.7333,
+      "end": 12.1667,
+      "words": [
+        {
+          "word": "دقة",
+          "start": 11.7333,
+          "end": 12.1667,
+          "frame_start": 704,
+          "frame_end": 730
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "start": 12.1667,
+      "end": 13.1667,
+      "words": [
+        {
+          "word": "سينمائية",
+          "start": 12.1667,
+          "end": 13.1667,
+          "frame_start": 730,
+          "frame_end": 790
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "start": 13.3333,
+      "end": 14.0,
+      "words": [
+        {
+          "word": "بسرعة",
+          "start": 13.3333,
+          "end": 14.0,
+          "frame_start": 800,
+          "frame_end": 840
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "start": 14.0,
+      "end": 15.0,
+      "words": [
+        {
+          "word": "الكود.",
+          "start": 14.0,
+          "end": 15.0,
+          "frame_start": 840,
+          "frame_end": 900
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "start": 16.2,
+      "end": 16.5,
+      "words": [
+        {
+          "word": "من",
+          "start": 16.2,
+          "end": 16.5,
+          "frame_start": 972,
+          "frame_end": 990
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "start": 16.5,
+      "end": 17.3333,
+      "words": [
+        {
+          "word": "الفكرة",
+          "start": 16.5,
+          "end": 17.3333,
+          "frame_start": 990,
+          "frame_end": 1040
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "start": 17.3667,
+      "end": 17.6333,
+      "words": [
+        {
+          "word": "إلى",
+          "start": 17.3667,
+          "end": 17.6333,
+          "frame_start": 1042,
+          "frame_end": 1058
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "start": 17.6333,
+      "end": 18.3667,
+      "words": [
+        {
+          "word": "الفيديو",
+          "start": 17.6333,
+          "end": 18.3667,
+          "frame_start": 1058,
+          "frame_end": 1102
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "start": 18.4,
+      "end": 18.6667,
+      "words": [
+        {
+          "word": "في",
+          "start": 18.4,
+          "end": 18.6667,
+          "frame_start": 1104,
+          "frame_end": 1120
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "start": 18.6667,
+      "end": 19.6333,
+      "words": [
+        {
+          "word": "دقائق.",
+          "start": 18.6667,
+          "end": 19.6333,
+          "frame_start": 1120,
+          "frame_end": 1178
+        }
+      ]
+    }
+  ]
+}

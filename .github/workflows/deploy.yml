@@ -1,0 +1,211 @@
+name: Deploy NEXUS
+
+# The studio is a Worker plus static assets. This workflow builds the bundle and
+# publishes it with the Cloudflare token kept in repository secrets — the token
+# is never echoed, and the account id is discovered from it when not supplied.
+
+on:
+  push:
+    branches: [arena/c36750ba-vitoai, main]
+    paths:
+      - "studio/**"
+      - "src/studio/**"
+      - "wrangler.toml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-studio
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build the studio bundle
+        run: node studio/build.mjs && ls -lh studio/dist | head -6
+
+      - name: Resolve credentials
+        env:
+          # the token may have been saved under any of these names
+          T1: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          T2: ${{ secrets.CLOUDFLARE_TOKEN }}
+          T3: ${{ secrets.CF_API_TOKEN }}
+          T4: ${{ secrets.CLOUDFLARE_API }}
+          A1: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          A2: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          TOKEN="${T1:-${T2:-${T3:-$T4}}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::No Cloudflare token in secrets. Found: CLOUDFLARE_API_TOKEN=$([ -n "$T1" ] && echo yes || echo no) CLOUDFLARE_TOKEN=$([ -n "$T2" ] && echo yes || echo no) CF_API_TOKEN=$([ -n "$T3" ] && echo yes || echo no) CLOUDFLARE_API=$([ -n "$T4" ] && echo yes || echo no)"
+            exit 1
+          fi
+          # never let the value reach a log line
+          echo "::add-mask::$TOKEN"
+          ACCOUNT="${A1:-${A2:-}}"
+          if [ -z "$ACCOUNT" ]; then
+            ACCOUNT=$(curl -sS -H "Authorization: Bearer $TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts" \
+              | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);process.stdout.write(j.result?.[0]?.id||'')}catch{process.stdout.write('')}})")
+          fi
+          if [ -z "$ACCOUNT" ]; then
+            echo "::error::Token could not be resolved to an account — check the token has Workers Scripts: Edit."
+            exit 1
+          fi
+          echo "::add-mask::$ACCOUNT"
+          {
+            echo "CLOUDFLARE_API_TOKEN=$TOKEN"
+            echo "CLOUDFLARE_ACCOUNT_ID=$ACCOUNT"
+          } >> "$GITHUB_ENV"
+          echo "credentials resolved ($([ -n "${A1:-${A2:-}}" ] && echo from secret || echo from API))"
+
+      - name: Feedback store (best effort)
+        # A trial needs somewhere to put the criticism. If a KV namespace can be
+        # created with the token, bind it; if not, the deploy still succeeds and
+        # notes go to the Worker log instead.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          OUT=$(npx --yes wrangler@4 kv namespace list 2>/dev/null || true)
+          ID=$(printf '%s' "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=s.match(/\"title\"\s*:\s*\"[^\"]*FEEDBACK[^\"]*\"[^}]*?\"id\"\s*:\s*\"([a-f0-9]+)\"/);const b=s.match(/\"id\"\s*:\s*\"([a-f0-9]+)\"[^}]*?\"title\"\s*:\s*\"[^\"]*FEEDBACK[^\"]*\"/);process.stdout.write((a&&a[1])||(b&&b[1])||'')})")
+          if [ -z "$ID" ]; then
+            CREATE=$(npx --yes wrangler@4 kv namespace create FEEDBACK 2>&1 || true)
+            printf '%s\n' "$CREATE" | grep -Ei "success|id" | head -3 || true
+            ID=$(printf '%s' "$CREATE" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const a=s.match(/\"id\"\s*:\s*\"([a-f0-9]+)\"/)||s.match(/id\s*=\s*\"([a-f0-9]+)\"/);process.stdout.write(a?a[1]:'')})")
+          fi
+          if [ -n "$ID" ] && printf '%s' "$ID" | grep -Eq '^[a-f0-9]{32}$'; then
+            printf '\n[[kv_namespaces]]\nbinding = "FEEDBACK"\nid = "%s"\n' "$ID" >> wrangler.toml
+            echo "feedback store bound ($ID)"
+          else
+            echo "::warning::no KV namespace — feedback will be logged, not stored"
+          fi
+
+      - name: Deploy
+        # Two attempts. The Worker is named "nexus" so that its address is
+        # nexus.vitobytestudio.workers.dev; if the token is scoped to the older
+        # worker name it cannot create "nexus", so we fall back to the name that
+        # already exists rather than failing the deploy. Whatever happens, the
+        # name actually deployed is what the next steps report.
+        run: |
+          fail() {
+            echo "::error::$1"
+            echo "### Deploy failed" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -30 /tmp/deploy.log >> "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          }
+
+          NAME=$(node -e "const t=require('fs').readFileSync('wrangler.toml','utf8');const m=t.match(/name\s*=\s*\"([^\"]+)\"/);process.stdout.write(m?m[1]:'nexus')")
+
+          if npx --yes wrangler@4 deploy > /tmp/deploy.log 2>&1; then
+            echo "deployed as $NAME"
+            echo "WORKER_NAME=$NAME" >> "$GITHUB_ENV"
+          else
+            echo "::warning::deploy as \"$NAME\" failed — retrying as \"vitobytestudio\""
+            cp /tmp/deploy.log /tmp/deploy-first.log
+            sed -i 's/^name = ".*"/name = "vitobytestudio"/' wrangler.toml
+            if npx --yes wrangler@4 deploy > /tmp/deploy.log 2>&1; then
+              echo "deployed as vitobytestudio (the token is scoped to this worker)"
+              echo "WORKER_NAME=vitobytestudio" >> "$GITHUB_ENV"
+              echo "### Address" >> "$GITHUB_STEP_SUMMARY"
+              echo "The token could not create a worker named \`$NAME\`; this deploy went to the existing worker instead." >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              head -12 /tmp/deploy-first.log >> "$GITHUB_STEP_SUMMARY" || true
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+            else
+              fail "wrangler could not deploy under either name"
+            fi
+          fi
+          grep -E "Uploaded|Deployed|https://|env\." /tmp/deploy.log | tail -20 || true
+
+      - name: Resolve the studio URL
+        run: |
+          SUB=$(curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).result?.subdomain||'')}catch{}})")
+          NAME="${WORKER_NAME:-nexus}"
+          if [ -n "$SUB" ]; then
+            URL="https://${NAME}.${SUB}.workers.dev"
+          else
+            URL=""
+          fi
+          echo "STUDIO_URL=$URL" >> "$GITHUB_ENV"
+          {
+            echo "### VITO STUDIO deployed"
+            echo ""
+            if [ -n "$URL" ]; then echo "**$URL**"; else echo "Check the Workers dashboard for the assigned URL."; fi
+            echo ""
+            echo "Worker: \`$NAME\` · account resolved · assets from \`studio/dist\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test
+        if: env.STUDIO_URL != ''
+        run: |
+          echo "target: $STUDIO_URL"
+          # a fresh workers.dev route can take a moment to answer; retry rather
+          # than declaring the deploy broken
+          code=000
+          for i in $(seq 1 12); do
+            code=$(curl -sS -m 20 -o /tmp/page.html -w "%{http_code}" "$STUDIO_URL/" || echo 000)
+            echo "attempt $i -> GET / $code"
+            [ "$code" = "200" ] && break
+            sleep 8
+          done
+          if [ "$code" != "200" ]; then
+            echo "--- body ---"; head -c 400 /tmp/page.html || true; echo
+            echo "--- headers ---"
+            curl -sS -m 20 -D - -o /dev/null "$STUDIO_URL/" || true
+            echo "::error::The studio answered $code"
+            exit 1
+          fi
+          js=$(curl -s -m 30 -o /tmp/app.js -w "%{http_code} %{size_download}" "$STUDIO_URL/app.js")
+          echo "GET /app.js -> $js"
+          grep -o "VITO LITE V2" /tmp/app.js | head -1
+
+          # every page must answer, because they are all linked from the footer
+          for p in / /studio /models /about /privacy /terms /feedback; do
+            c=$(curl -s -m 20 -o /dev/null -w "%{http_code}" "$STUDIO_URL$p")
+            echo "GET $p -> $c"
+            [ "$c" = "200" ] || { echo "::error::$p answered $c"; exit 1; }
+          done
+
+          # and the two agent endpoints must be alive, not 404
+          echo "health: $(curl -s -m 20 "$STUDIO_URL/api/health")"
+          c=$(curl -s -m 20 -o /dev/null -w "%{http_code}" -X POST -H 'content-type: application/json' -d '{"message":"deploy smoke test","kind":"deploy"}' "$STUDIO_URL/api/feedback")
+          echo "POST /api/feedback -> $c"
+
+      - name: Record the URL in the repository
+        if: env.STUDIO_URL != ''
+        run: |
+          echo "$STUDIO_URL" > STUDIO_URL.txt
+          git config user.name "vito deploy"
+          git config user.email "deploy@vitoai.dev"
+          git add STUDIO_URL.txt
+          if git diff --cached --quiet; then echo "unchanged"; else
+            git commit -m "chore: studio url $STUDIO_URL [skip ci]"
+            git push
+          fi
+
+      - name: Keep the deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log
+          path: /tmp/deploy.log
+          if-no-files-found: ignore

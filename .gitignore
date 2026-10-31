@@ -1,0 +1,25 @@
+node_modules/
+.cache/
+.toolenv
+# rendered deliverables stay out of git — the promoted copies live in deliverables/
+out/*.mp4
+out/master_raw.mp4
+# generated from scripts/make_audio.py
+public/audio/*.wav
+
+# guard: a mis-parameterised env var once wrote 209MB of chromium here
+undefined/
+.render-tools/
+studio/dist/
+
+# upload inbox / hand-back folder — big media, never committed
+inbox/
+outbox/
+
+# heavy exports that must never be committed again
+*master*.mp4
+*clean*.mp4
+cdn/*.mp4
+
+# the uploaded clip is a source, never a deliverable
+/public/inbox/

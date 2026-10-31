@@ -1,0 +1,114 @@
+name: Render film
+
+# The studio's render farm. Public repo → free, unlimited minutes, no account,
+# no card, no server. A brief goes in, an MP4 with its own score comes out and
+# lands in the "films" release, which is where the studio's library reads from.
+
+on:
+  workflow_dispatch:
+    inputs:
+      brief:
+        description: "What the film is about (any language)"
+        required: true
+        default: "a premium launch film for a developer platform"
+      composition:
+        description: "Composition id"
+        required: true
+        default: "ProductFilm"
+  repository_dispatch:
+    types: [render-film]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-film
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Resolve brief
+        id: brief
+        env:
+          EVENT_BRIEF: ${{ github.event.inputs.brief || github.event.client_payload.brief }}
+          EVENT_COMP: ${{ github.event.inputs.composition || github.event.client_payload.composition }}
+        run: |
+          BRIEF="${EVENT_BRIEF:-a premium launch film for a developer platform}"
+          COMP="${EVENT_COMP:-ProductFilm}"
+          echo "brief=$BRIEF" >> "$GITHUB_OUTPUT"
+          echo "comp=$COMP" >> "$GITHUB_OUTPUT"
+          SLUG=$(printf '%s' "$BRIEF" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | cut -c1-40 | sed 's/-$//')
+          echo "slug=${SLUG:-film}" >> "$GITHUB_OUTPUT"
+          echo "stamp=$(date -u +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Browser
+        run: npx remotion browser ensure
+
+      - name: Cue sheet
+        env:
+          BRIEF: ${{ steps.brief.outputs.brief }}
+        run: |
+          npx esbuild studio/cues.ts --bundle --platform=node --format=cjs \
+            --outfile=/tmp/cues.cjs --log-level=error
+          node /tmp/cues.cjs > /tmp/cues.json
+          cat /tmp/cues.json | head -c 400; echo
+
+      - name: Picture
+        env:
+          # the composition's own duration comes from the same plan
+          COMP: ${{ steps.brief.outputs.comp }}
+        run: |
+          npx remotion render src/index.ts "$COMP" /tmp/picture.mp4 \
+            --concurrency=2 --log=error
+
+      - name: Score
+        run: node studio/score.mjs /tmp/cues.json /tmp/score.wav
+
+      - name: Mix
+        run: |
+          FF=./node_modules/@ffmpeg-installer/linux-x64/ffmpeg
+          "$FF" -y -hide_banner -loglevel error \
+            -i /tmp/picture.mp4 -i /tmp/score.wav \
+            -map 0:v -map 1:a -c:v copy \
+            -af "loudnorm=I=-14:TP=-1.5:LRA=11" \
+            -ar 48000 -c:a aac -b:a 192k -shortest /tmp/film.mp4
+          "$FF" -hide_banner -i /tmp/film.mp4 2>&1 | grep -E "Duration|Audio" || true
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NAME: ${{ steps.brief.outputs.slug }}-${{ steps.brief.outputs.stamp }}.mp4
+          BRIEF: ${{ steps.brief.outputs.brief }}
+        run: |
+          # 1080x1920 vertical, ready to download from a phone
+          gh release view films >/dev/null 2>&1 || \
+            gh release create films --title "Film library" \
+              --notes "Every film the studio has rendered. Newest first. Download straight from a phone."
+          cp /tmp/film.mp4 "/tmp/$NAME"
+          gh release upload films "/tmp/$NAME" --clobber
+          # the brief is stored next to the film so any render can be reproduced
+          printf '%s' "$BRIEF" > "/tmp/$NAME.txt"
+          gh release upload films "/tmp/$NAME.txt" --clobber
+
+      - name: Summary
+        run: |
+          {
+            echo "### Film ready"
+            echo ""
+            echo "**Brief** — ${{ steps.brief.outputs.brief }}"
+            echo ""
+            echo "Download from the [films release](https://github.com/${{ github.repository }}/releases/tag/films)."
+          } >> "$GITHUB_STEP_SUMMARY"
