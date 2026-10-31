@@ -13,10 +13,18 @@ export const injectFontFaces = () => {
   injected = true;
   const style = document.createElement("style");
   style.setAttribute("data-vitoai-fonts", "true");
+  // Arabic faces are deliberately kept off the currency block; the Latin faces
+  // carry a real € glyph that the shipped range was silently excluding, which is
+  // exactly how "€10,000" rendered as tofu on the first EDGE test render.
+  const EXTRA: Record<string, string> = {
+    "Space Grotesk": ", U+20A0-20CF",
+    Sora: ", U+20A0-20CF",
+    "JetBrains Mono": ", U+20A0-20CF",
+  };
   style.textContent = FONT_DATA.map(
     (f) =>
       `@font-face{font-family:"${f.family}";font-style:normal;font-weight:${f.weight};font-display:block;` +
-      `src:url(data:font/woff2;base64,${f.b64}) format("woff2");unicode-range:${f.range};}`,
+      `src:url(data:font/woff2;base64,${f.b64}) format("woff2");unicode-range:${f.range}${EXTRA[f.family] ?? ""};}`,
   ).join("\n");
   document.head.appendChild(style);
 };

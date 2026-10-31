@@ -258,7 +258,7 @@ const Scene1: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
                     display: "block",
                     fontFamily: LAT,
                     fontSize: i === 0 ? 128 : 132,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     letterSpacing: "-0.045em",
                     lineHeight: 1.04,
                     color: i === 1 ? EMERALD : PAPER,
@@ -297,16 +297,30 @@ const Scene1: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
 
 /* ------------------------------------------------------------------ scene 2 */
 
+const PANEL_T = 430;
+const PANEL_H = 1300;
+
+/** the tangle: what "traditional overhead" actually looks like */
 const ComplexGraph: React.FC<{ f: number }> = ({ f }) => {
-  const nodes = [...Array(11)].map((_, i) => ({
-    x: 90 + rnd(i) * 320,
-    y: 220 + rnd(i + 40) * 900,
+  const nodes = [...Array(13)].map((_, i) => ({
+    x: 40 + rnd(i) * 420,
+    y: 60 + rnd(i + 40) * (PANEL_H - 320),
   }));
   const edges: [number, number][] = [
-    [0, 1], [1, 2], [2, 3], [1, 3], [0, 4], [4, 5], [5, 6], [3, 6], [6, 7], [7, 8], [8, 9], [9, 10], [4, 10], [2, 9],
+    [0, 1], [1, 2], [2, 3], [1, 3], [0, 4], [4, 5], [5, 6], [3, 6], [6, 7],
+    [7, 8], [8, 9], [9, 10], [4, 10], [2, 9], [10, 11], [11, 12], [12, 7], [5, 12],
   ];
   return (
-    <svg width={540} height={1400} style={{ position: "absolute", left: 0, top: 200 }}>
+    <svg width={540} height={PANEL_H} style={{ position: "absolute", left: 0, top: 0 }}>
+      {[...Array(7)].map((_, i) => (
+        <path
+          key={i}
+          d={`M ${20 + i * 24} ${PANEL_H} C ${10 + i * 20} ${PANEL_H * 0.7}, ${220 + i * 8} ${PANEL_H * 0.35}, ${60 + i * 16} 40`}
+          fill="none"
+          stroke={MIST}
+          strokeWidth={1}
+        />
+      ))}
       {edges.map(([a, b], i) => (
         <line
           key={i}
@@ -314,102 +328,126 @@ const ComplexGraph: React.FC<{ f: number }> = ({ f }) => {
           y1={nodes[a].y}
           x2={nodes[b].x}
           y2={nodes[b].y}
-          stroke={`${GREY}66`}
-          strokeWidth={1.2}
+          stroke={`${GREY}55`}
+          strokeWidth={1}
           strokeDasharray={4}
-          strokeDashoffset={-f * 0.4}
+          strokeDashoffset={-f * 0.3}
         />
       ))}
       {nodes.map((n, i) => (
-        <circle key={i} cx={n.x} cy={n.y} r={i % 3 === 0 ? 7 : 4} fill={`${GREY}${i % 3 === 0 ? "AA" : "66"}`} />
-      ))}
-      {/* the tangle the brief calls "traditional overhead" */}
-      {[...Array(9)].map((_, i) => (
-        <path
-          key={i}
-          d={`M ${60 + i * 40} ${1500} C ${40 + i * 30} ${1100}, ${180 + i * 10} ${700}, ${60 + i * 20} 260`}
-          fill="none"
-          stroke={`${MIST}`}
-          strokeWidth={1}
-        />
+        <circle key={i} cx={n.x} cy={n.y} r={i % 4 === 0 ? 6 : 3.5} fill={`${GREY}${i % 4 === 0 ? "AA" : "55"}`} />
       ))}
     </svg>
   );
 };
 
+/** one line, top to bottom, four stops, nothing else */
 const LinearFlow: React.FC<{ f: number; n?: number }> = ({ f }) => {
-  const y = 1160;
+  const x = 270;
+  const d = p(f, S2 + 4, S2 + 46, ION);
+  const top = 90;
+  const bot = PANEL_H - 230;
+  const stops = [0, 0.34, 0.68, 1];
   return (
-    <svg width={540} height={1400} style={{ position: "absolute", right: 0, top: 200 }}>
-      <line x1={60} y1={y} x2={480} y2={y} stroke={`${PAPER}22`} strokeWidth={1} />
+    <svg width={540} height={PANEL_H} style={{ position: "absolute", left: 0, top: 0 }}>
+      <line x1={x} y1={top} x2={x} y2={bot} stroke={`${PAPER}18`} strokeWidth={1} />
       <line
-        x1={60}
-        y1={y}
-        x2={60 + 420 * p(f, 0, 60, ION)}
-        y2={y}
+        x1={x}
+        y1={top}
+        x2={x}
+        y2={top + (bot - top) * d}
         stroke={EMERALD}
         strokeWidth={3}
-        style={{ filter: `drop-shadow(0 0 8px ${EMERALD})` }}
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 7px ${EMERALD})` }}
       />
-      {[60, 200, 340, 480].map((x, i) => {
-        const on = p(f, 6 + i * 12, 22 + i * 12);
-        return <circle key={i} cx={x} cy={y} r={6 * on} fill={i === 3 ? EMERALD : PAPER} opacity={on} />;
+      {stops.map((t, i) => {
+        const on = p(f, S2 + 12 + i * 9, S2 + 26 + i * 9);
+        return (
+          <circle key={i} cx={x} cy={top + (bot - top) * t} r={7 * on} fill={i === 3 ? EMERALD : PAPER} opacity={on} />
+        );
       })}
-      {/* a single packet travelling the line */}
-      <circle cx={60 + ((420 * ((f * 0.9) % 100)) / 100)} cy={y} r={4} fill={PAPER} />
+      <circle cx={x} cy={top + ((bot - top) * ((f * 2.4) % 100)) / 100} r={4} fill={PAPER} opacity={0.9} />
+      <circle cx={x} cy={top + ((bot - top) * ((f * 2.4 + 50) % 100)) / 100} r={3} fill={PAPER} opacity={0.45} />
     </svg>
   );
 };
 
 const Scene2: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
-  const whipIn = mode === "technical" ? 1 - p(f, S2, S2 + 8) : 1;
-  const split = p(f, S2 + 6, S2 + 30, ION);
+  // the brief asks for a whip pan into this shot, in both cuts. It lasts
+  // 7 frames in the cinema cut, 10 in the technical one — but it always
+  // resolves to zero, which the first version of this file forgot to do.
+  const whipIn = 1 - p(f, S2, S2 + (mode === "technical" ? 10 : 7), IN);
+  const split = p(f, S2 + 4, S2 + 26, ION);
+  const panelIn = p(f, S2 + 8, S2 + 34, ION);
   return (
-    <AbsoluteFill style={{ background: INK, transform: `translateX(${whipIn * 260}px)`, filter: whipIn > 0.02 ? `blur(${whipIn * 22}px)` : undefined }}>
-      <Light x={18} y={30} r={60} a={0.07} />
-      <Light x={82} y={70} r={55} a={0.1} />
+    <AbsoluteFill
+      style={{
+        background: INK,
+        transform: `translateX(${whipIn * (mode === "technical" ? 300 : 190)}px)`,
+        filter: whipIn > 0.01 ? `blur(${whipIn * (mode === "technical" ? 26 : 16)}px)` : undefined,
+      }}
+    >
+      <Light x={22} y={44} r={58} a={0.06} />
+      <Light x={80} y={56} r={54} a={0.08} />
 
-      {/* the divider draws itself */}
+      {/* the statement, above the two panels — it must not sit on the proof */}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 168, padding: "0 84px", textAlign: "center" }}>
+        <Rise v={p(f, S2 + 20, S2 + 48)}>
+          <div style={{ fontFamily: LAT, fontSize: 76, fontWeight: 700, letterSpacing: "-0.03em", color: PAPER, lineHeight: 1.14 }}>
+            Complexity is not
+          </div>
+        </Rise>
+        <Rise v={p(f, S2 + 30, S2 + 58)}>
+          <div style={{ fontFamily: LAT, fontSize: 76, fontWeight: 700, letterSpacing: "-0.03em", color: EMERALD, lineHeight: 1.14 }}>
+            a feature.
+          </div>
+        </Rise>
+      </div>
+
+      <div style={{ position: "absolute", left: 0, right: 0, top: PANEL_T, height: PANEL_H, opacity: panelIn }}>
+        <div style={{ position: "absolute", left: 0, top: 0, width: W / 2, height: PANEL_H }}>
+          <ComplexGraph f={f} />
+        </div>
+        <div style={{ position: "absolute", right: 0, top: 0, width: W / 2, height: PANEL_H }}>
+          <LinearFlow f={f} />
+        </div>
+      </div>
+
+      {/* the divider draws itself between the two proofs */}
       <div
         style={{
           position: "absolute",
           left: "50%",
-          top: 220,
-          bottom: 220,
+          top: PANEL_T,
+          height: PANEL_H,
           width: 1,
-          background: `linear-gradient(180deg, transparent, ${PAPER}22, transparent)`,
+          background: `linear-gradient(180deg, transparent, ${PAPER}33, transparent)`,
           transform: `scaleY(${split})`,
         }}
       />
 
-      <div style={{ position: "absolute", inset: 0, opacity: p(f, S2 + 14, S2 + 40) }}>
-        <div style={{ position: "absolute", left: 0, top: 0, width: W / 2, height: H }}>
-          <ComplexGraph f={f} />
-          <div style={{ position: "absolute", left: 54, bottom: 300, fontFamily: MONO, fontSize: 13, letterSpacing: "0.24em", color: `${GREY}AA` }}>
-            TRADITIONAL
-            <br />
-            OVERHEAD
-          </div>
+      <div
+        style={{
+          position: "absolute",
+          left: 62,
+          right: 62,
+          top: PANEL_T + PANEL_H - 88,
+          display: "flex",
+          justifyContent: "space-between",
+          opacity: panelIn,
+        }}
+      >
+        <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.26em", color: `${GREY}CC`, lineHeight: 1.9 }}>
+          TRADITIONAL
+          <br />
+          OVERHEAD
         </div>
-        <div style={{ position: "absolute", right: 0, top: 0, width: W / 2, height: H }}>
-          <LinearFlow f={f} />
-          <div style={{ position: "absolute", right: 54, bottom: 300, textAlign: "right", fontFamily: MONO, fontSize: 13, letterSpacing: "0.24em", color: `${EMERALD}CC` }}>
-            SINGLE
-            <br />
-            LINEAR FLOW
-          </div>
+        <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.26em", color: `${EMERALD}DD`, lineHeight: 1.9, textAlign: "right" }}>
+          SINGLE
+          <br />
+          LINEAR FLOW
         </div>
-      </div>
-
-      <div style={{ position: "absolute", left: 0, right: 0, top: 700, padding: "0 84px", textAlign: "center" }}>
-        <Rise v={p(f, S2 + 30, S2 + 60)}>
-          <div style={{ fontFamily: LAT, fontSize: 78, fontWeight: 600, letterSpacing: "-0.03em", color: PAPER, lineHeight: 1.16 }}>
-            Complexity is not
-          </div>
-        </Rise>
-        <Rise v={p(f, S2 + 40, S2 + 70)}>
-          <div style={{ fontFamily: LAT, fontSize: 78, fontWeight: 600, letterSpacing: "-0.03em", color: EMERALD, lineHeight: 1.16 }}>a feature.</div>
-        </Rise>
       </div>
 
       <Vignette s={0.66} />
@@ -419,50 +457,86 @@ const Scene2: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
 
 /* ------------------------------------------------------------------ scene 3 */
 
-const TERM = [
-  ["$ edge deploy --region fra1 --env prod", PAPER],
-  ["✓ build          1.9s", GREY],
-  ["✓ upload         0.4s", GREY],
-  ["✓ propa",
-    EMERALD],
-];
+/** the check mark, drawn — U+2713 is not in the embedded JetBrains subset and
+ *  rendered as a tofu box, so the tick ships as geometry instead. */
+const Check: React.FC<{ c?: string; s?: number }> = ({ c = EMERALD, s = 20 }) => (
+  <svg width={s} height={s} viewBox="0 0 20 20" style={{ flex: "0 0 auto" }}>
+    <path d="M3.5 10.5 L8 15 L16.5 5.5" fill="none" stroke={c} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const STAGE_T = 470;
+const STAGE_H = 840;
 
 const Terminal: React.FC<{ f: number }> = ({ f }) => {
   const typed = (s: string, at: number, len: number) => s.slice(0, Math.floor(p(f, at, at + len) * s.length));
+  const cmd = "$ edge deploy --fra1 --env prod";
+  const rows = [
+    { k: "build", v: "1.9s", at: 22 },
+    { k: "upload", v: "0.4s", at: 30 },
+    { k: "propagate", v: "fra1 · ams1 · iad1", at: 38 },
+  ];
   return (
-    <div style={{ position: "absolute", left: 64, right: 64, top: 520 }}>
-      <div
-        style={{
-          border: `1px solid ${PAPER}1A`,
-          background: `linear-gradient(180deg, ${INK2}, #050607)`,
-          padding: 34,
-          borderRadius: 3,
-          boxShadow: "0 40px 120px rgba(0,0,0,0.6)",
-        }}
-      >
-        <div style={{ display: "flex", gap: 7, marginBottom: 24 }}>
-          {[0, 1, 2].map((i) => (
-            <div key={i} style={{ width: 9, height: 9, borderRadius: 9, background: `${PAPER}22` }} />
-          ))}
-        </div>
-        <div style={{ fontFamily: MONO, fontSize: 25, lineHeight: 1.9, color: PAPER }}>
-          <div>{typed(TERM[0][0] as string, 0, 26)}</div>
-          <div style={{ color: GREY }}>{typed(TERM[1][0] as string, 26, 10)}</div>
-          <div style={{ color: GREY }}>{typed(TERM[2][0] as string, 34, 10)}</div>
-          <div style={{ color: EMERALD }}>{typed(TERM[3][0] as string, 42, 8)}</div>
-        </div>
+    <div style={{ position: "absolute", left: 44, right: 44, top: STAGE_T, height: STAGE_H, display: "flex", alignItems: "center" }}>
+      <div style={{ width: "100%" }}>
         <div
           style={{
-            marginTop: 26,
-            paddingTop: 22,
-            borderTop: `1px solid ${PAPER}14`,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
+            border: `1px solid ${PAPER}1A`,
+            background: `linear-gradient(180deg, ${INK2}, #050607)`,
+            padding: 52,
+            borderRadius: 4,
+            boxShadow: "0 50px 140px rgba(0,0,0,0.7)",
           }}
         >
-          <span style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.2em", color: `${GREY}` }}>DEPLOYED TO THE EDGE</span>
-          <span style={{ fontFamily: LAT, fontSize: 54, fontWeight: 600, color: EMERALD, letterSpacing: "-0.03em" }}>12ms</span>
+          <div style={{ display: "flex", gap: 8, marginBottom: 30 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: 10, background: `${PAPER}22` }} />
+            ))}
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 33, letterSpacing: "-0.01em", color: PAPER, lineHeight: 1.5, whiteSpace: "nowrap" }}>
+            {typed(cmd, 2, 26)}
+            <span style={{ opacity: 0.5 }}>{(f - S3) % 16 < 8 ? "▌" : " "}</span>
+          </div>
+          <div style={{ marginTop: 22 }}>
+            {rows.map((r, i) => {
+              const on = p(f, r.at, r.at + 8);
+              return (
+                <div
+                  key={r.k}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    height: 64,
+                    opacity: on,
+                    transform: `translateX(${(1 - on) * -8}px)`,
+                    fontFamily: MONO,
+                    fontSize: 28,
+                    color: i === 2 ? EMERALD : GREY,
+                  }}
+                >
+                  <Check c={i === 2 ? EMERALD : `${GREY}CC`} s={18} />
+                  <span style={{ minWidth: 250 }}>{r.k}</span>
+                  <span style={{ letterSpacing: "0.04em" }}>{r.v}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div
+            style={{
+              marginTop: 30,
+              paddingTop: 26,
+              borderTop: `1px solid ${PAPER}14`,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            }}
+          >
+            <span style={{ fontFamily: MONO, fontSize: 15, letterSpacing: "0.22em", color: GREY }}>DEPLOYED TO THE EDGE</span>
+            <span style={{ fontFamily: LAT, fontSize: 122, fontWeight: 700, color: EMERALD, letterSpacing: "-0.045em", lineHeight: 0.9 }}>
+              12<span style={{ fontSize: 54, letterSpacing: "-0.02em" }}>ms</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -470,79 +544,84 @@ const Terminal: React.FC<{ f: number }> = ({ f }) => {
 };
 
 const Keyboard: React.FC<{ f: number }> = ({ f }) => {
-  const press = p(f, 10, 18);
+  const press = p(f, 8, 16);
+  const ripple = p(f, 10, 40);
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, top: 760, perspective: 1400 }}>
-      <div
-        style={{
-          margin: "0 auto",
-          width: 760,
-          transform: `rotateX(52deg) rotateZ(-8deg)`,
-          display: "grid",
-          gridTemplateColumns: "repeat(8, 1fr)",
-          gap: 10,
-        }}
-      >
-        {[...Array(32)].map((_, i) => {
-          const hot = i === 13;
-          return (
-            <div
-              key={i}
-              style={{
-                height: 62,
-                borderRadius: 6,
-                background: hot ? `linear-gradient(180deg, ${EMERALD}33, ${EMERALD}11)` : `linear-gradient(180deg, #1B1E22, #101214)`,
-                border: `1px solid ${hot ? EMERALD + "88" : PAPER + "12"}`,
-                transform: `translateY(${hot ? press * 4 : 0}px)`,
-                boxShadow: hot ? `0 0 ${24 * press}px ${EMERALD}66` : "0 4px 0 #050607",
-              }}
-            />
-          );
-        })}
+    <div style={{ position: "absolute", left: 0, right: 0, top: STAGE_T, height: STAGE_H, display: "flex", alignItems: "center", justifyContent: "center", perspective: 1500 }}>
+      <div style={{ position: "relative", width: 980, transform: "rotateX(50deg) rotateZ(-6deg)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(9, 1fr)", gap: 12 }}>
+          {[...Array(36)].map((_, i) => {
+            const hot = i === 12;
+            return (
+              <div
+                key={i}
+                style={{
+                  height: 86,
+                  borderRadius: 7,
+                  background: hot
+                    ? `linear-gradient(180deg, ${EMERALD}40, ${EMERALD}14)`
+                    : `linear-gradient(180deg, #1C1F23, #0F1113)`,
+                  border: `1px solid ${hot ? `${EMERALD}AA` : `${PAPER}12`}`,
+                  transform: `translateY(${hot ? press * 5 : 0}px)`,
+                  boxShadow: hot ? `0 0 ${40 * press}px ${EMERALD}77, inset 0 0 20px ${EMERALD}22` : "0 5px 0 #040506",
+                }}
+              />
+            );
+          })}
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "45%",
+            width: 560 * ripple,
+            height: 240 * ripple,
+            transform: "translate(-50%,-50%)",
+            borderRadius: "50%",
+            border: `1px solid ${EMERALD}`,
+            opacity: 0.55 * (1 - ripple),
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "45%",
+            width: 300 * p(f, 14, 44),
+            height: 120 * p(f, 14, 44),
+            transform: "translate(-50%,-50%)",
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse at center, ${EMERALD}22, transparent 70%)`,
+          }}
+        />
       </div>
-      {/* the ripple out of the pressed key */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: 130,
-          width: 420 * p(f, 12, 40),
-          height: 160 * p(f, 12, 40),
-          transform: "translate(-50%,-50%)",
-          borderRadius: "50%",
-          border: `1px solid ${EMERALD}`,
-          opacity: 0.5 * (1 - p(f, 12, 40)),
-        }}
-      />
     </div>
   );
 };
 
 const Flow: React.FC<{ f: number }> = ({ f }) => (
-  <div style={{ position: "absolute", inset: 0 }}>
+  <div style={{ position: "absolute", left: 0, right: 0, top: STAGE_T, height: STAGE_H, display: "flex", flexDirection: "column", justifyContent: "center" }}>
     {[...Array(9)].map((_, i) => {
-      const y = 560 + i * 70;
       const t = ((f * 0.8 + i * 37) % 100) / 100;
       return (
         <React.Fragment key={i}>
-          <div style={{ position: "absolute", left: 120, top: y, right: 120, height: 1, background: `${PAPER}14` }} />
-          <div
-            style={{
-              position: "absolute",
-              left: lerp(120, 960, t),
-              top: y - 2,
-              width: 70,
-              height: 5,
-              background: `linear-gradient(90deg, transparent, ${i % 3 === 0 ? EMERALD : PAPER}, transparent)`,
-              opacity: 0.85,
-            }}
-          />
+          <div style={{ position: "relative", height: 74, margin: "0 70px" }}>
+            <div style={{ position: "absolute", left: 0, right: 0, top: 37, height: 1, background: `${PAPER}14` }} />
+            <div
+              style={{
+                position: "absolute",
+                left: `calc(${t * 100}% - 45px)`,
+                top: 34,
+                width: 90,
+                height: 6,
+                background: `linear-gradient(90deg, transparent, ${i % 3 === 0 ? EMERALD : PAPER}, transparent)`,
+                opacity: 0.9,
+              }}
+            />
+          </div>
         </React.Fragment>
       );
     })}
-    <div style={{ position: "absolute", left: "50%", top: 1180, transform: "translateX(-50%)", fontFamily: MONO, fontSize: 13, letterSpacing: "0.34em", color: `${EMERALD}BB` }}>
-      AUTOPILOT · 1,284 EVENTS/MIN
-    </div>
   </div>
 );
 
@@ -565,15 +644,18 @@ const Scene3: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
       {i >= 3 ? <Flow f={f} /> : null}
 
       {/* the three words, one per beat pair */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 330, textAlign: "center" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1300, textAlign: "center" }}>
         {mode === "technical" ? (
           <div style={{ fontFamily: MONO, fontSize: 13, letterSpacing: "0.36em", color: `${EMERALD}` }}>
             {labels[Math.min(2, Math.floor(i / 2))].num} · {labels[Math.min(2, Math.floor(i / 2))].en.toUpperCase()}
           </div>
         ) : (
           <Rise v={p(local, 0, 10)}>
-            <div style={{ fontFamily: LAT, fontSize: 92, fontWeight: 600, letterSpacing: "-0.035em", color: PAPER, lineHeight: 1.1 }}>
+            <div style={{ fontFamily: LAT, fontSize: 92, fontWeight: 700, letterSpacing: "-0.035em", color: PAPER, lineHeight: 1.1 }}>
               {labels[Math.min(2, Math.floor(i / 2))].en}
+            </div>
+            <div style={{ marginTop: 30, fontFamily: MONO, fontSize: 15, letterSpacing: "0.3em", color: `${EMERALD}CC` }}>
+              {["DEPLOY IN SECONDS", "AUTOMATE THE HEAVY LIFTING", "SCALE ON DEMAND"][Math.min(2, Math.floor(i / 2))]}
             </div>
           </Rise>
         )}
@@ -587,58 +669,90 @@ const Scene3: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
 
 const Scene4: React.FC<{ f: number; mode: Mode }> = ({ f }) => {
   const shake = (n: number) => Math.sin(f * 0.9 + n) * 1.6 + Math.sin(f * 2.1 + n * 2) * 0.8;
-  const grow = p(f, S4 + 10, S4 + 120, ION);
+  const grow = p(f, S4 + 10, S4 + 110, ION);
+  const HORIZON = 1504;
   return (
     <AbsoluteFill style={{ background: "#050607", transform: `translate(${shake(1)}px, ${shake(2)}px)` }}>
-      {/* the room: two rim lights and a horizon of desk */}
-      <Light x={20} y={26} r={52} c="#2A6E5A" a={0.16} />
-      <Light x={84} y={34} r={48} c="#3A4A66" a={0.12} />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1180, height: 1, background: `linear-gradient(90deg, transparent, ${PAPER}20, transparent)` }} />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1180, bottom: 0, background: "linear-gradient(180deg, #0A0C0E, #030405)" }} />
+      {/* the room: two rim lights, a desk edge, and the screen's own spill */}
+      <Light x={18} y={24} r={54} c="#2A6E5A" a={0.16} />
+      <Light x={86} y={32} r={50} c="#3A4A66" a={0.12} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: HORIZON, bottom: 0, background: "linear-gradient(180deg, #0B0D10, #030405 60%)" }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: HORIZON, height: 1, background: `linear-gradient(90deg, transparent, ${PAPER}22, transparent)` }} />
+      <div
+        style={{
+          position: "absolute",
+          left: "10%",
+          right: "10%",
+          top: HORIZON - 150,
+          height: 470,
+          background: `radial-gradient(ellipse at 50% 0%, ${EMERALD}1F, transparent 62%)`,
+          opacity: 0.6 + 0.4 * grow,
+        }}
+      />
 
       {/* the ultrawide monitor */}
       <div
         style={{
           position: "absolute",
-          left: 90,
-          right: 90,
-          top: 470,
-          height: 620,
+          left: 74,
+          right: 74,
+          top: 372,
+          height: 700,
           borderRadius: 10,
           border: `1px solid ${PAPER}22`,
           background: `linear-gradient(160deg, #0B0E11, #070809)`,
-          boxShadow: `0 0 120px ${EMERALD}18, 0 60px 140px rgba(0,0,0,0.8)`,
+          boxShadow: `0 0 140px ${EMERALD}1C, 0 70px 150px rgba(0,0,0,0.85)`,
           overflow: "hidden",
         }}
       >
-        <div style={{ position: "absolute", left: 40, top: 34, fontFamily: MONO, fontSize: 12, letterSpacing: "0.3em", color: `${PAPER}55` }}>GROWTH · EU</div>
-        <svg width="100%" height="100%" viewBox="0 0 860 620" preserveAspectRatio="none">
+        <div style={{ position: "absolute", left: 44, top: 38, fontFamily: MONO, fontSize: 13, letterSpacing: "0.3em", color: `${PAPER}66` }}>GROWTH · EU</div>
+        <div style={{ position: "absolute", right: 44, top: 38, fontFamily: MONO, fontSize: 13, letterSpacing: "0.3em", color: `${EMERALD}CC` }}>+340%</div>
+        <svg width="100%" height="100%" viewBox="0 0 932 700" preserveAspectRatio="none">
           {[0, 1, 2, 3].map((i) => (
-            <line key={i} x1={40} x2={820} y1={160 + i * 110} y2={160 + i * 110} stroke={`${PAPER}0E`} strokeWidth={1} />
+            <line key={i} x1={44} x2={888} y1={220 + i * 130} y2={220 + i * 130} stroke={`${PAPER}0E`} strokeWidth={1} />
           ))}
           <path
-            d={`M 40 560 C 180 552, 240 470, 340 430 S 520 320, 620 200 S 760 90, 820 60`}
+            d="M 44 640 C 200 630, 270 545, 380 500 S 570 380, 680 250 S 830 110, 888 74"
             fill="none"
             stroke={EMERALD}
-            strokeWidth={3}
-            strokeDasharray={1600}
-            strokeDashoffset={1600 * (1 - grow)}
-            style={{ filter: `drop-shadow(0 0 10px ${EMERALD})` }}
+            strokeWidth={3.4}
+            strokeDasharray={1700}
+            strokeDashoffset={1700 * (1 - grow)}
+            style={{ filter: `drop-shadow(0 0 8px ${EMERALD}77)` }}
           />
-          <circle cx={lerp(40, 820, grow)} cy={lerp(560, 60, grow)} r={5} fill={PAPER} />
+          <circle cx={lerp(44, 888, grow)} cy={lerp(640, 74, grow)} r={6} fill={PAPER} />
         </svg>
       </div>
 
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1230, textAlign: "center", padding: "0 70px" }}>
-        <Rise v={p(f, S4 + 26, S4 + 56)}>
-          <div style={{ fontFamily: LAT, fontSize: 80, fontWeight: 600, letterSpacing: "-0.035em", color: PAPER, lineHeight: 1.14 }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1176, textAlign: "center", padding: "0 70px" }}>
+        <Rise v={p(f, S4 + 22, S4 + 52)}>
+          <div style={{ fontFamily: LAT, fontSize: 84, fontWeight: 700, letterSpacing: "-0.035em", color: PAPER, lineHeight: 1.12 }}>
             Speed is your
           </div>
         </Rise>
-        <Rise v={p(f, S4 + 36, S4 + 66)}>
-          <div style={{ fontFamily: LAT, fontSize: 80, fontWeight: 600, letterSpacing: "-0.035em", color: EMERALD, lineHeight: 1.14 }}>only moat.</div>
+        <Rise v={p(f, S4 + 32, S4 + 62)}>
+          <div style={{ fontFamily: LAT, fontSize: 84, fontWeight: 700, letterSpacing: "-0.035em", color: EMERALD, lineHeight: 1.12 }}>only moat.</div>
         </Rise>
       </div>
+
+      {/* one line of proof, on the desk, where the light falls */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: HORIZON + 92,
+          textAlign: "center",
+          fontFamily: MONO,
+          fontSize: 15,
+          letterSpacing: "0.34em",
+          color: `${GREY}CC`,
+          opacity: p(f, S4 + 60, S4 + 90),
+        }}
+      >
+        SHIP · MEASURE · SCALE
+      </div>
+
       <Vignette s={0.72} />
     </AbsoluteFill>
   );
@@ -659,7 +773,7 @@ const Scene5: React.FC<{ f: number; mode: Mode }> = ({ f }) => {
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 10, height: 10, borderRadius: 10, background: EMERALD, boxShadow: `0 0 18px ${EMERALD}`, transform: `scale(${p(local, 30, 50)})` }} />
-            <span style={{ fontFamily: LAT, fontSize: 92, fontWeight: 600, letterSpacing: `${lerp(0.22, 0.3, p(local, 30, 80))}em`, color: PAPER, marginRight: `-${lerp(0.22, 0.3, p(local, 30, 80))}em` }}>
+            <span style={{ fontFamily: LAT, fontSize: 92, fontWeight: 700, letterSpacing: `${lerp(0.22, 0.3, p(local, 30, 80))}em`, color: PAPER, marginRight: `-${lerp(0.22, 0.3, p(local, 30, 80))}em` }}>
               SYSTEM
             </span>
           </div>
