@@ -11,3 +11,7 @@ public/audio/*.wav
 undefined/
 .render-tools/
 studio/dist/
+
+# upload inbox / hand-back folder — big media, never committed
+inbox/
+outbox/
