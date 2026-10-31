@@ -19,6 +19,7 @@ import { Spot, DURATION as SPOT_DURATION } from "./studio/reel/Spot";
 import { Talk, DURATION as TALK_DURATION } from "./studio/reel/Talk";
 import { Specimen, DURATION as SPECIMEN_DURATION } from "./studio/reel/Specimen";
 import { Edge, DURATION as EDGE_DURATION } from "./studio/reel/Edge";
+import { Bone, DURATION as BONE_DURATION } from "./studio/reel/Bone";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -122,6 +123,8 @@ export const RemotionRoot: React.FC = () => (
     {/* EDGE — 30s cinematic tech spot, two cuts */}
     <Composition id="Edge" component={Edge} durationInFrames={EDGE_DURATION} fps={30} width={1080} height={1920} defaultProps={{ mode: "cinema" }} />
     <Composition id="EdgeTechnical" component={Edge} durationInFrames={EDGE_DURATION} fps={30} width={1080} height={1920} defaultProps={{ mode: "technical" }} />
+    {/* BONE — the same 30s script, cut as a printed spread. two colours. */}
+    <Composition id="Bone" component={Bone} durationInFrames={BONE_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SHOWREEL — 30s, eight movements, the studio's own advertisement */}
     <Composition id="Showreel" component={Showreel} durationInFrames={REEL_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
