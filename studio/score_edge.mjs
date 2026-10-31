@@ -151,8 +151,8 @@ function enter(t0, g = 0.5) {
 
 /* --------------------------------------------------------------- the sheet */
 
-drone(0, 30, 0.34); // the room tone for the whole film
-drone(24, 6, 0.3); // the outro keeps only this
+drone(0, 30, 0.22); // the room tone for the whole film
+drone(24, 6, 0.2); // the outro keeps only this
 
 subDrop(0.5, 1.0); // scene 1
 air(3.55, 0.9, 0.34, -0.2); // the whip into split screen

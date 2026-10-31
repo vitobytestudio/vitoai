@@ -110,6 +110,27 @@ const Rise: React.FC<{ v: number; children: React.ReactNode; style?: React.CSSPr
   </span>
 );
 
+/** a whip pan with nothing to blur reads as a black dropout. This is the light
+ *  that actually crosses the lens while the camera moves. */
+const Smear: React.FC<{ v: number }> = ({ v }) =>
+  v <= 0.02 ? null : (
+    <div style={{ position: "absolute", inset: -200, pointerEvents: "none" }}>
+      <div
+        style={{
+          position: "absolute",
+          left: "-20%",
+          right: "-20%",
+          top: "42%",
+          height: lerp(70, 420, v),
+          transform: "translateY(-50%)",
+          background: `linear-gradient(90deg, transparent, ${PAPER}00 8%, ${PAPER}D9 46%, ${EMERALD}E6 54%, ${PAPER}00 92%, transparent)`,
+          filter: "blur(62px)",
+          opacity: 0.42 * v,
+        }}
+      />
+    </div>
+  );
+
 /* ------------------------------------------------------- technical chrome */
 
 const Chrome: React.FC<{ f: number; scene: number; label: string }> = ({ f, scene, label }) => {
@@ -399,7 +420,7 @@ const Scene2: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
   // the brief asks for a whip pan into this shot, in both cuts. It lasts
   // 7 frames in the cinema cut, 10 in the technical one — but it always
   // resolves to zero, which the first version of this file forgot to do.
-  const whipIn = 1 - p(f, S2, S2 + (mode === "technical" ? 10 : 7), IN);
+  const whipIn = 1 - p(f, S2, S2 + (mode === "technical" ? 8 : 6), IN);
   const split = p(f, S2 + 4, S2 + 26, ION);
   const panelIn = p(f, S2 + 8, S2 + 34, ION);
   return (
@@ -472,6 +493,7 @@ const Scene2: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
         </div>
       </div>
 
+      <Smear v={whipIn} />
       <Vignette s={0.66} />
     </AbsoluteFill>
   );
@@ -713,6 +735,7 @@ const Scene3: React.FC<{ f: number; mode: Mode }> = ({ f, mode }) => {
           </Rise>
         )}
       </div>
+      <Smear v={whip} />
       <Vignette s={0.6} />
     </AbsoluteFill>
   );
