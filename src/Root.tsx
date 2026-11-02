@@ -21,6 +21,7 @@ import { Specimen, DURATION as SPECIMEN_DURATION } from "./studio/reel/Specimen"
 import { Edge, DURATION as EDGE_DURATION } from "./studio/reel/Edge";
 import { Bone, DURATION as BONE_DURATION } from "./studio/reel/Bone";
 import { Chase, DURATION as CHASE_DURATION } from "./studio/reel/Chase";
+import { Naksab01, DURATION as NAKSAB_DURATION } from "./naksab/Ep01";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -127,6 +128,8 @@ export const RemotionRoot: React.FC = () => (
     {/* BONE — the same 30s script, cut as a printed spread. two colours. */}
     <Composition id="Bone" component={Bone} durationInFrames={BONE_DURATION} fps={30} width={1080} height={1920} />
     {/* CHASE — 18s, one continuous phone take over a night street race */}
+    {/* NAKSAB Ep.01 — 24 s, the marketplace run once end to end */}
+    <Composition id="Naksab01" component={Naksab01} durationInFrames={NAKSAB_DURATION} fps={30} width={1080} height={1920} />
     <Composition id="Chase" component={Chase} durationInFrames={CHASE_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SHOWREEL — 30s, eight movements, the studio's own advertisement */}
     <Composition id="Showreel" component={Showreel} durationInFrames={REEL_DURATION} fps={30} width={1080} height={1920} />

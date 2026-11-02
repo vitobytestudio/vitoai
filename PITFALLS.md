@@ -312,3 +312,13 @@ it only removes it from future serving.
 - **A "hand crossing the lens" must stay at a corner.** A 520×900 blurred blob crosses the subject and reads as a smudge; 260×420 at 0.85 opacity entering from a corner reads as a thumb.
 - **Declaration order:** anything computed from `shot` (pan velocity, blur) must sit *below* the `SHOTS.findIndex` block, or `tsc` throws `TS2448` and the render dies with `Cannot access 'shot' before initialization`.
 - **Combined blur stacks.** Plate `blur(whipV·10.5)` *plus* parent `blur(focus)` (rack 3.4 + hunt + pan ≤2.4) is already at the limit; at `whipV·16` the whip peak turned the frame into an unreadable smear.
+
+## NAKSAB — product-UI films (2026-11)
+
+- **Latin digits inside an Arabic font stack hang the renderer.** `font-family: "IBM Plex Sans Arabic"` + `35,000` froze Chromium's layout for the whole 33 s delayRender window (no error, just a timeout). The embedded Plex subsets carry no Latin coverage, and the fallback path stalls. Every numeral now goes through `<Num>`: Space Grotesk, `direction: ltr`, `unicodeBidi: isolate`.
+- **U+2713 (✓) has no glyph in any embedded face** and hangs the same way. Draw checks with `<Tick>`, an inline SVG path.
+- **The Arabic subsets also lack Latin punctuation** (`—`, `…`, `«»`, `·`). Put ASCII/general-punctuation runs in the Latin faces, or widen the harness font chain: `"IBM Plex Sans Arabic", "Space Grotesk", "Cairo", sans-serif` — Space Grotesk covers U+0000-00FF and U+2000-206F.
+- **`Fade` must take `f`.** A helper called as `<Fade at={n}>` cannot read the frame; it renders `opacity: 0` forever and the headline silently disappears. Pass `f` explicitly.
+- **Never fade a block out while the scroll is still moving it away.** Fading the offer cards at f 340 emptied the screen before the next section arrived — a black hole with only the app bar. Let the scroll do the exiting.
+- **Sections that slide under a pinned app bar need an opaque bar.** A gradient that ended at 0.92 let body text read through; use `#05060A` to 72 %, then a short ramp.
+- **Empty lower thirds are visible on a 9:16 product page.** Fill them with the film's own statement (two lines of large Arabic), not with decoration.
