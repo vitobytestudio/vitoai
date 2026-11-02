@@ -302,3 +302,13 @@ it only removes it from future serving.
   scene and sliding that scene in leaves 3-4 frames of empty frame. A whip needs
   the *light crossing the lens*: a wide, heavily blurred white→emerald streak at
   0.4 opacity, fading with the move. Same for the mid-scene cuts.
+
+## Chase — photographic-plate film (2026-11)
+
+- **A still plate cannot be panned far.** A drift of ±300 px on a 1080×1920 plate at `scale 1.06` slides the image off the frame and shows the black background. Keep drifts under ~±(z−1)·940 vertically / (z−1)·520 horizontally, and clamp the zoom to the offset:
+  `z={Math.max(lerp(z0,z1,e), 1.03 + Math.abs(px)/940, 1.03 + Math.abs(py)/520)}`.
+- **`SHOTS` must be continuous.** A gap between two shots (`to: 375` … `next.from: 385`) renders `shot === null` for ten frames — pure black, which reads as a mistake rather than a whip. Make every shot end where the next begins.
+- **Do not paint light trails over a plate that already has them.** Stacked synthetic `PassStreak` rows duplicated the headlight streaks and broke the illusion; the plate is the truth.
+- **A "hand crossing the lens" must stay at a corner.** A 520×900 blurred blob crosses the subject and reads as a smudge; 260×420 at 0.85 opacity entering from a corner reads as a thumb.
+- **Declaration order:** anything computed from `shot` (pan velocity, blur) must sit *below* the `SHOTS.findIndex` block, or `tsc` throws `TS2448` and the render dies with `Cannot access 'shot' before initialization`.
+- **Combined blur stacks.** Plate `blur(whipV·10.5)` *plus* parent `blur(focus)` (rack 3.4 + hunt + pan ≤2.4) is already at the limit; at `whipV·16` the whip peak turned the frame into an unreadable smear.
