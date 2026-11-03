@@ -322,3 +322,11 @@ it only removes it from future serving.
 - **Never fade a block out while the scroll is still moving it away.** Fading the offer cards at f 340 emptied the screen before the next section arrived — a black hole with only the app bar. Let the scroll do the exiting.
 - **Sections that slide under a pinned app bar need an opaque bar.** A gradient that ended at 0.92 let body text read through; use `#05060A` to 72 %, then a short ramp.
 - **Empty lower thirds are visible on a 9:16 product page.** Fill them with the film's own statement (two lines of large Arabic), not with decoration.
+
+## NAKSAB Ep.02 — diagram films (2026-11)
+
+- **Tajawal carries no Latin coverage at all.** A trailing `.` or a `·` set in `"Tajawal"` falls through to `sans-serif` — which does not exist here — and the glyph vanishes (or hangs). Chain it: `"Tajawal", "Space Grotesk", "Cairo", sans-serif`, and keep punctuation in the Latin faces.
+- **Harakat split the word.** A marked word (`موثّقة`, `تُثبت`) is shaped per-cluster; if any cluster falls back, the whole word renders as broken boxes. Display type in this box stays unvocalised — write `موثقة`, `تثبت`.
+- **Never mask display lines with `overflow: hidden` + a fixed height** to fake a slide-in: Arabic ascenders and the dot of a final `ة` get sliced. Animate `translateY` + opacity on the line itself.
+- **A mark whose parent is a `nowrap` RTL block must be a sibling of the copy, not inside it.** A 112 px wordmark inside a 928 px Arabic column pulls the whole block: give the constellation SVG and the type block separate layers.
+- **Drawn connection lines need something to converge *into*.** Fourteen rays meeting at an empty point read as a starburst; add the glow ellipse **and** let the lines fade once the mark lands.
