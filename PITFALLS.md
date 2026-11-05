@@ -330,3 +330,26 @@ it only removes it from future serving.
 - **Never mask display lines with `overflow: hidden` + a fixed height** to fake a slide-in: Arabic ascenders and the dot of a final `ة` get sliced. Animate `translateY` + opacity on the line itself.
 - **A mark whose parent is a `nowrap` RTL block must be a sibling of the copy, not inside it.** A 112 px wordmark inside a 928 px Arabic column pulls the whole block: give the constellation SVG and the type block separate layers.
 - **Drawn connection lines need something to converge *into*.** Fourteen rays meeting at an empty point read as a starburst; add the glow ellipse **and** let the lines fade once the mark lands.
+
+## Generated 3D on this box (studio/blender/) — 2026-11
+
+Full list lives in `studio/blender/README.md`. The three that cost the most hours:
+
+- **`import bpy` dies on a USD symbol that is plainly defined in `bpy/lib/libusd_ms.so`.**
+  It is loaded RTLD_LOCAL, so it is not in the global scope when bpy relocates. Fix is a
+  launcher that `ctypes.CDLL(libusd_ms.so, RTLD_GLOBAL)` first (`bpyrun.py`). Chasing this
+  through `ldd`/`readelf` is a dead end — `ldd -r` reports *zero* problems for the same
+  module python cannot import.
+- **Stubbing absent X/GL libraries: define only what is missing, never what exists.**
+  `exit`, `calloc`, `clock_gettime`, `PyExc_*` all show up in raw `nm` output; the moment
+  they land in a stub, Blender exits with an empty traceback. Subtract everything the
+  bundled libs, the interpreter and libc already define, and rebuild. ~60 symbols, not 1400.
+- **Arabic in 3D is a geometry problem, not a font problem.** Blender's FONT curve does no
+  shaping (isolated glyphs, LTR), and `Curve.extrude` fills each contour separately, so
+  letter counters float as discs → "crumpled foil". HarfBuzz → fontTools contours → one
+  earcut pass per glyph → `recalc_face_normals`, and only then a material.
+
+Budget, measured: 1080×1920 Cycles CPU is **~60 s/frame** at 14 spp with DOF + motion blur
+on 2 cores. A 30-second fully generated film is ~15 hours of render — so 3D is spent on one
+or two beats (an insert of 1–2 s at 24 fps), never on a whole film. 720×1280 is 5× cheaper
+when a shot is mostly darkness and metal.
