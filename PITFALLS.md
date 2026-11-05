@@ -427,3 +427,37 @@ only way to start Python inside this sandbox.
     maps `sensor_width` to the *larger* dimension — a 31 mm lens in a 1080×1920 render gives a
     60° vertical FOV and puts the whole 2.55 m corridor into the middle third of the frame with
     black above and below. 42 mm made the doorway a subject instead of a detail.
+
+### 3D — a toy film (blocky figures, many shots, `scene_toy.py`)
+
+19. **A conditionally mounted component owns its own zero.** `Rule`/`Mark` are switched by a
+    frame range, not wrapped in `<Sequence from={…}>`, so `useCurrentFrame()` inside them keeps
+    counting from 0 of the *film*. Every `interpolate` in them was already past its fade-out
+    window and the section rendered black. Subtract the shot's start frame inside the component
+    (`const f = useCurrentFrame() - inFrame`) — and check a still of every graphic section,
+    not just one.
+20. **A shot is only as long as its plate.** 24 frames at 24 fps conform to 30 at 30 fps: a
+    32-frame edit window on a 30-frame plate seeks past the end. Put the plate's length in the
+    same table as the cut and let the numbers disagree loudly instead of holding a frame.
+21. **Never parent a local-space part with `matrix_parent_inverse = root.matrix_world.inverted()`.**
+    That composition *cancels* the root's transform: every figure silently collapses to the
+    world origin, no error, and a whole batch renders as an empty corridor. Parts authored in
+    figure space need `Matrix.Identity(4)`; only parts authored in world space want the inverse.
+    Probe it in 0.5 s (`/tmp/p_probe.py` prints each part's world bbox) before any batch.
+22. **Proportions come from a grid, not from numbers typed into a script.** The figures only
+    looked like Roblox once the whole body was built on `U = 0.20 · height` — torso 2U wide,
+    head 1.05U, arms 1.9U — so `height=1.0` is one metre and `height=0.36` is a child. The
+    previous version mixed hand-picked sizes and read as a furniture catalogue.
+23. **A figure needs a key of its own, and a squad needs the bulb to stay alive.** The
+    practical bulb behind the camera lights the *wall*; without `toy-key`/`toy-top` the toys are
+    silhouettes, and the dying-bulb curve makes the last third of a plate go black. Hunt shots
+    keep the flicker, squad shots use `bulb_level(..., alive=True)`. A `torch` spot that follows
+    the camera fixes both a backlit sprint and the "this is a game" read.
+24. **The score's `BEAT` table is the edit's timing contract.** When the count section grew by
+    20 frames, the footsteps under the walk shot were 0.4 s early — which in a trailer is not a
+    sync error, it is a broken film. Move both numbers in the same commit.
+25. **`Buffer.allocUnsafe(N * 4)` for stereo float32** is one sample too small: the write at
+    `i * 8 + 4` on the last frame throws `ERR_OUT_OF_RANGE` after a minute of synthesis. Stereo
+    float32 is `N * 8`. And master with `min(0.9/peak, target/rms)` only after looking at the
+    crest factor: a music box with one impact has ~20 dB of crest, so the peak branch binds and
+    the file ships 6 dB too quiet.
