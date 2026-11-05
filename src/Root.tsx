@@ -23,6 +23,7 @@ import { Bone, DURATION as BONE_DURATION } from "./studio/reel/Bone";
 import { Chase, DURATION as CHASE_DURATION } from "./studio/reel/Chase";
 import { Naksab01, DURATION as NAKSAB_DURATION } from "./naksab/Ep01";
 import { Naksab02, DURATION as NAKSAB2_DURATION } from "./naksab/Ep02";
+import { Horror01, DURATION as HORROR_DURATION } from "./horror/Scene01";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -133,6 +134,8 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="Naksab01" component={Naksab01} durationInFrames={NAKSAB_DURATION} fps={30} width={1080} height={1920} />
     <Composition id="Naksab02" component={Naksab02} durationInFrames={NAKSAB2_DURATION} fps={30} width={1080} height={1920} />
     <Composition id="Chase" component={Chase} durationInFrames={CHASE_DURATION} fps={30} width={1080} height={1920} />
+    {/* a generated horror beat — Cycles plate, 30 fps master */}
+    <Composition id="Horror01" component={Horror01} durationInFrames={HORROR_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SHOWREEL — 30s, eight movements, the studio's own advertisement */}
     <Composition id="Showreel" component={Showreel} durationInFrames={REEL_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}

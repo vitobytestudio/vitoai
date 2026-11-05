@@ -353,3 +353,77 @@ Budget, measured: 1080×1920 Cycles CPU is **~60 s/frame** at 14 spp with DOF + 
 on 2 cores. A 30-second fully generated film is ~15 hours of render — so 3D is spent on one
 or two beats (an insert of 1–2 s at 24 fps), never on a whole film. 720×1280 is 5× cheaper
 when a shot is mostly darkness and metal.
+
+---
+
+## 3D — Blender/Cycles plates (النسخة العربية داخل Blender)
+
+The first time the studio generated real 3D footage instead of animating 2D layers.
+`studio/blender/` is the rig, `studio/blender/stage.py` the safe API, `bpyrun.py` the
+only way to start Python inside this sandbox.
+
+1. **`Material.use_nodes = True` is not optional, and `emission()` hands back a
+   *Material*.** `stage.emission()` returns the material, so `mat.inputs[0]` throws.
+   For a one-node emission material the node is `mat.node_tree.nodes["Emission"]`.
+   Passing the material into `stage.pulse()` works — it looks the node up itself.
+2. **Blender 5.0 renamed half of the API the internet still teaches.** `Scene.node_tree`
+   and `use_nodes` → `compositing_node_group`; `CompositorNodeComposite` → `NodeGroupOutput`
+   plus `ng.interface.new_socket()`; `CompositorNodeGlare.glare_type` → `inputs["Type"]`
+   holding *display* enums (`"Fog Glow"`, not `"FOG_GLOW"`); `ShaderNodeMixRGB`/`MixAddNode`
+   → `ShaderNodeMix` with a `Fac` in *float* mode; `Scene.cycles.motion_blur_position` is
+   gone. Every post-processing knob must be inside a `try:` or the render dies at the last
+   metre. `stage.py` does this once so scenes never learn it again.
+3. **Arabic cannot be made with `bpy.ops.object.text_add`.** Blender's text object does no
+   OpenType shaping: no joining, isolated forms only, and the wrong direction. The pipeline
+   is HarfBuzz (`uharfbuzz`) for the glyph IDs and advances, `fontTools` for contours, then
+   the contours are welded into one closed loop per *island* (outer + its counters) and
+   filled as an n-gon with walls — `ar.arabic_mesh()`. `arabic_curve()` (a curve with bevel +
+   extrude) looks tempting and is broken: it crumples where contours touch.
+4. **`mathutils.geometry.triangulate` does not exist in the pip `bpy` wheel.** Do not ear-clip
+   by hand — Blender fills n-gons itself: `bm.faces.new(loop)` for the caps,
+   `bm.edges.ensure_shortest_path` per 4-ring for the side walls, then `bm.normal_update()`.
+5. **The flatten tolerance is a quality control.** `ar._Flatten` approximates quad Bézier
+   segments with cubics; at `tol=0.8` (mm in font units — the em is 1000) hairlines and
+   counters visibly facet in a 1080-px frame. `tol=0.25` costs nothing and fixes it.
+6. **One Python process per frame is a 20 s tax you pay 48 times.** Build the scene once and
+   loop the frames inside it, plus `render.use_persistent_data = True`: 100 s/frame became
+   61 s/frame with identical output. Keep the single-frame mode for look-dev (`--from 20 --to 20`).
+7. **Dust is geometry, and geometry is expensive.** 260 motes with 260 unique materials took
+   ~40 s/frame of the render. One shared emissive material on 90 sprites placed *inside the
+   light shaft only* (a box test against the doorway) is free — and reads better, because
+   dust is only visible where light falls.
+8. **Motion blur is a luxury here.** It doubled the frame time for a camera move of about a
+   millimetre per frame. `new_scene(motion_blur=False)`, and put the shutter into the *edit*
+   instead (the door, the flicker).
+9. **A generated "volumetric glow" mesh in front of the camera is a light, not a look.**
+   The horizon glow plane read as a blue smudge and lit the floor like a mirror. The fix was
+   to delete it: gradient world + one real volume + real lights.
+10. **Check what the camera actually sees before dressing the room.** The bulb was modelled at
+    z=2.03 while the camera looked at z≈1.30 with a ±1.07 vertical window — the lamp was
+    *outside the frame*, and the whole premise (a bulb on a cord) was invisible. Compute
+    `tan(half_fov)·d` and print the visible height before you place anything symbolic.
+11. **A reveal must be withheld.** The silhouette standing in the corridor looked like a
+    rendering bug for 30 frames until `fig.hide_render = t < 0.56`. Horror is an editing
+    problem, not a modelling problem.
+12. **Never `pkill -f <script>.py` from a shell whose own command line contains that string** —
+    it kills the tool call that issued it. Stop background jobs with the process tool.
+13. **`stage.place` needs `to_track_quat("-Z","Y")` for a plane aimed at a point** in a 9:6
+    frame, and area lights need their size *and* their spread or the walls get hot bands.
+14. **Timing must live in one place.** Blender renders at 24 fps and the film at 30, so
+    `scene_horror.py` and `score_horror.mjs` both use the same literal curve
+    (`P0 = 0.3`, `pt(t) = P0 + t·2.0`) and the same flicker seed. Any other arrangement
+    drifts by a frame every frame.
+15. **A silhouette is a background problem.** Three renders of the reveal frame failed the same
+    way: the figure was correctly modelled, correctly placed, and invisible — because everything
+    behind it was black. A figure reads only if the surface *behind* it carries light. Move the
+    flash so it hits the far wall (or floor) at the height of the shoulders, not the ceiling,
+    and aim it *through* the subject's silhouette.
+16. **`visible_shadow = False` turns a body into a sticker.** It was there to keep the flash
+    frame clean at 8 samples; it also deleted the one thing that sells a backlit figure — the
+    shadow it eats from the light. Shadows on, clamp indirect to 4, denoise.
+17. **The skip-if-exists guard is a footgun with two triggers.** `rm` the frame you want redone,
+    and remember that any camera/light change invalidates *every* frame, not just the test one.
+18. **In 9:16, the lens fits the vertical, so compute the vertical window.** AUTO `sensor_fit`
+    maps `sensor_width` to the *larger* dimension — a 31 mm lens in a 1080×1920 render gives a
+    60° vertical FOV and puts the whole 2.55 m corridor into the middle third of the frame with
+    black above and below. 42 mm made the doorway a subject instead of a detail.
