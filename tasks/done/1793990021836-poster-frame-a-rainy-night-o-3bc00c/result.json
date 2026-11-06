@@ -1,0 +1,76 @@
+{
+  "artifacts": [
+    {
+      "bytes": 62,
+      "how": "harvest",
+      "kind": "text",
+      "name": "answer.md",
+      "sha256": "c3f90a7ef7f47c4cf5237b272c999aabb68ebc175c192bad8b5cd7e16ce0262c"
+    },
+    {
+      "bytes": 808,
+      "how": "download",
+      "kind": "image",
+      "name": "gemini-poster.png",
+      "sha256": "97e354c2c1f3c5b39e2d4d25f101990ce3a668e35872de11637d18ab093edf69"
+    },
+    {
+      "bytes": 66,
+      "how": "written",
+      "kind": "sidecar",
+      "name": "gemini-poster.png.sidecar.json",
+      "sha256": "d5d2ca71600fc0ab80f1bd15daf4a7a8ed9dccdc89e9aea7caf68c971db12ef6"
+    }
+  ],
+  "chrome": {
+    "detail": "nothing answering at http://127.0.0.1:9222/json/version (URLError: <urlopen error [Errno 111] Connection refused>). Is the tunnel up, and is the browser started with --remote-debugging-port?",
+    "endpoint": "http://127.0.0.1:9222",
+    "launched": false
+  },
+  "env": "local",
+  "error": null,
+  "exit_code": 0,
+  "id": "1793990021836-poster-frame-a-rainy-night-o-3bc00c",
+  "kind": "ask",
+  "platform": "gemini",
+  "runner": {
+    "artifacts": [
+      {
+        "bytes": 808,
+        "how": "download",
+        "kind": "image",
+        "path": "/tmp/bridge-live/wclone/.vito-bridge/work/1793990021836-poster-frame-a-rainy-night-o-3bc00c/artifacts/gemini-poster.png"
+      },
+      {
+        "bytes": 61,
+        "how": "harvest",
+        "kind": "text",
+        "path": "/tmp/bridge-live/wclone/.vito-bridge/work/1793990021836-poster-frame-a-rainy-night-o-3bc00c/artifacts/answer.md"
+      },
+      {
+        "bytes": 40,
+        "how": "written",
+        "kind": "sidecar",
+        "path": "/tmp/bridge-live/wclone/.vito-bridge/work/1793990021836-poster-frame-a-rainy-night-o-3bc00c/artifacts/gemini-poster.png.sidecar.json"
+      }
+    ],
+    "exit_code": 0,
+    "ok": true,
+    "platform": "gemini",
+    "seconds": 0.0
+  },
+  "skipped": [],
+  "status": "ok",
+  "timings": {
+    "finished_at": 1793990108.4481583,
+    "queued_at": 1793990021.8366144,
+    "seconds": 0.0,
+    "started_at": 1793990108.4233956
+  },
+  "worker": {
+    "endpoint": "http://127.0.0.1:9222",
+    "host": "linux-e2b.local",
+    "pid": 11399,
+    "python": "3.11.2"
+  }
+}
