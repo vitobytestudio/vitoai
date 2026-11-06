@@ -561,8 +561,11 @@ class Bridge:
     def status(self, tid: str = "") -> dict:
         ref = self.g.fetch() or "HEAD"
         names = self.g.run("ls-tree", "-r", "--name-only", ref, "--", Q).stdout.split()
-        live = sorted({Path(n).name[:-5] for n in names if n.startswith((PENDING + "/", RUNNING + "/")) and n.endswith(".json")})
-        done = sorted({done_id(n) for n in names if n.startswith(DONE + "/") and done_id(n)}, reverse=True)
+        # a name is a task only if it matches the id shape — .gitkeep and any file a human drops in
+        # are not tasks, and must never be pruned as if they were
+        live = sorted({Path(n).name[:-5] for n in names
+                       if n.startswith((PENDING + "/", RUNNING + "/")) and ID_RE.match(Path(n).stem)})
+        done = sorted({d for d in (done_id(n) for n in names if n.startswith(DONE + "/")) if ID_RE.match(d)}, reverse=True)
         seen = sorted(set(live) | set(done))
         if tid and tid not in seen:
             raise BridgeError(f"no task {tid} on {self.g.branch} (newest first: {', '.join(seen[-8:]) or 'none yet'})")
@@ -1015,7 +1018,7 @@ def prune(g: Git, keep: int, apply: bool) -> dict:
     g.ensure_open()
     ref = g.refresh() or "HEAD"
     names = g.run("ls-tree", "-r", "--name-only", ref, "--", DONE).stdout.split()
-    ids = sorted({d for d in (done_id(n) for n in names) if d}, reverse=True)
+    ids = sorted({d for d in (done_id(n) for n in names) if ID_RE.match(d)}, reverse=True)
     stale = ids[keep:] if keep > 0 else ids
     if not stale:
         return {"ok": True, "removed": 0, "kept": ids[:keep], "committed": False}
@@ -1214,7 +1217,10 @@ def self_check() -> int:
               (gw.repo / f"{PENDING}/README.md").exists() and not gw.read_json(Bridge.result_path("README")))
         def done_ids(git: Git) -> list[str]:
             names = git.run("ls-tree", "-r", "--name-only", git.ref or "HEAD", "--", DONE).stdout.split()
-            return sorted({d for d in (done_id(n) for n in names) if d}, reverse=True)
+            return sorted({d for d in (done_id(n) for n in names) if ID_RE.match(d)}, reverse=True)
+
+        check("housekeeping: .gitkeep is not a task and never becomes one",
+              ".gitkeep" not in b.status().get("tasks", {}) and not (gw.repo / PENDING / "x.json").exists())
 
         p = prune(gw, 1, False)
         check("prune: dry run counts before touching anything", p.get("dry_run") and p.get("count", 0) >= 1 and len(done_ids(gw)) > 1, json.dumps(p)[:160])

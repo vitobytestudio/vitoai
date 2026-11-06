@@ -81,7 +81,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: install (no browser download: we launch one ourselves below)
+      - name: "install — no browser download, we launch one ourselves below"
         run: python -m pip install --quiet --upgrade pip playwright
 
       - name: queue the dispatched prompt
@@ -97,7 +97,8 @@ jobs:
       - name: a throwaway browser, then drain this runner's share of the queue
         run: |
           set -euo pipefail
-          python -m playwright install chromium --with-deps >/dev/null
+          # --with-deps needs apt; the image already has the libraries chromium wants
+          python -m playwright install chromium >/dev/null 2>&1 || python -m playwright install --with-deps chromium >/dev/null
           CHROME=$(ls -d "$HOME/.cache/ms-playwright/chromium-"*/chrome-linux/chrome | head -1)
           nohup "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
             --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-hosted about:blank \
