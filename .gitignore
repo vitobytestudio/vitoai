@@ -27,3 +27,12 @@ cdn/*.mp4
 # python bytecode from the Blender rig
 __pycache__/
 *.pyc
+
+# a saved browser session IS a login: never commit it, never let a stray glob pick it up
+storage_state.json
+*.storage_state.json
+cookies.json
+gemini_cookies.json
+*.cookies.txt
+cookies.txt
+tools/cookies/
