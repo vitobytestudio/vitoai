@@ -1226,6 +1226,13 @@ def self_check() -> int:
         check("prune: keeps the newest result only", after == keep[:1], f"{after} vs {keep[:1]}")
         check("schema: a task file never names a command",
               all(k in ASK_KEYS for k in validate_task({"ask": {"platform": "g", "prompt": "p"}})["ask"]))
+        wargs = vars(build_parser().parse_args(["worker", "--once"]))
+        code = [ln for ln in Path(__file__).read_text(encoding="utf-8").splitlines() if "``" not in ln]
+        reads = {m for ln in code for m in re.findall(r"self\.cfg\.([a-z_][a-z_0-9]*)", ln)}
+        check("cli: every flag the worker reads exists (and vice versa)",
+              not reads - set(wargs), f"missing: {', '.join(sorted(reads - set(wargs))) or 'none'}")
+        check("cli: no flag the worker reads is undocumented or hidden",
+              all(wargs.get(k) is not None or k.startswith("no_") for k in reads), "")
         ping = validate_task({"env": "local", "kind": "ping", "note": "are you there"})
         ping["kind"] = "ping"
         b.submit(ping)
@@ -1249,7 +1256,10 @@ def self_check() -> int:
 
 
 # ------------------------------------------------------------------------------ cli
-def main(argv: Optional[list[str]] = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
+    """Built apart from ``main`` so a self-check can hold the parser and the code up against each
+    other: every ``self.cfg.x`` the worker reads has to be a flag, and this caught two that were
+    not — one lost in a patch, one that never existed."""
     ap = argparse.ArgumentParser(prog="python3 tools/gh_bridge.py",
                                  description="Queue platform work through git: no ports, no tunnels, no shared browser.",
                                  epilog="The layout and the rules are in this file's docstring; tools/README.md has the run books.")
@@ -1316,6 +1326,9 @@ def main(argv: Optional[list[str]] = None) -> int:
                     help="persistent profile dir (Chrome 136+ ignores the debug port on the default profile)")
     wk.add_argument("--launch-wait", type=float, default=25.0, help="seconds to wait for the endpoint after launching")
     wk.add_argument("--python", default=sys.executable, help="interpreter used to run tools.runner")
+    wk.add_argument("--runner-cmd", default="",
+                    help="replace the runner command (CI and tests). The machine that runs the worker "
+                         "chooses this; a task can never set it")
     wk.add_argument("--check-endpoint", dest="check_endpoint", action="store_true", default=True,
                     help="refuse to start work when nothing answers the CDP endpoint")
     wk.add_argument("--no-check-endpoint", dest="check_endpoint", action="store_false",
@@ -1327,6 +1340,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     sc = sub.add_parser("self-check", help="offline: schema, argv, and a full queue round trip in a temp repo")
     sc.add_argument("--offline", action="store_true", help="accepted and ignored; this check is always offline")
 
+    return ap
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    ap = build_parser()
     args = ap.parse_args(argv)
     indent = None if args.indent == 0 else args.indent
     try:
