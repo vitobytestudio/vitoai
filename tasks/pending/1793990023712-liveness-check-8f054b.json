@@ -1,0 +1,9 @@
+{
+  "ask": {},
+  "client": "agent",
+  "created_at": 1793990023.7121804,
+  "env": "local",
+  "id": "1793990023712-liveness-check-8f054b",
+  "kind": "ping",
+  "note": "liveness check"
+}
