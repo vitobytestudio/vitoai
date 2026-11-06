@@ -96,21 +96,38 @@ jobs:
 
       - name: a throwaway browser, then drain this runner's share of the queue
         run: |
-          set -euo pipefail
-          # --with-deps needs apt; the image already has the libraries chromium wants
-          python -m playwright install chromium >/dev/null 2>&1 || python -m playwright install --with-deps chromium >/dev/null
-          CHROME=$(ls -d "$HOME/.cache/ms-playwright/chromium-"*/chrome-linux/chrome | head -1)
-          nohup "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
-            --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-hosted about:blank \
-            >/tmp/chrome.log 2>&1 &
-          for _ in $(seq 40); do
-            curl -sf localhost:9222/json/version >/dev/null && break
-            sleep 0.5
-          done
-          curl -s localhost:9222/json/version | head -c 200 || tail -5 /tmp/chrome.log
+          set -uo pipefail
+          # Loud on purpose: the log body lives on a host some sandboxes cannot read, so anything
+          # worth knowing has to reach the branch. The worker reports per-task failures through
+          # tasks/done/, which is the channel that always works.
+          python -m playwright --version
+          python -m playwright install chromium || python -m playwright install --with-deps chromium || true
+          ls -1 "$HOME/.cache/ms-playwright" 2>/dev/null || echo "no browser cache at all"
+          CHROME=$(ls -d "$HOME/.cache/ms-playwright"/chromium-*/chrome-linux/chrome 2>/dev/null | head -1)
+          if [ -n "$CHROME" ]; then
+            nohup "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
+              --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-hosted about:blank \
+              >/tmp/chrome.log 2>&1 &
+            for _ in $(seq 40); do
+              curl -sf localhost:9222/json/version >/dev/null && break
+              sleep 0.5
+            done
+            curl -s localhost:9222/json/version | head -c 200 || { echo "chrome did not answer; its log:"; tail -20 /tmp/chrome.log; }
+          else
+            echo "no chromium binary from playwright — continuing anyway, so each task reports its own failure"
+          fi
+          # --no-check-endpoint: the worker must still answer the queue when the browser is missing,
+          # because a rejected task with a sentence beats a silent branch.
           python3 tools/gh_bridge.py --branch "$BRANCH" worker \
             --once --env hosted --cdp-url http://127.0.0.1:9222 \
             --no-launch-chrome --no-check-endpoint --heartbeat 0
+          echo "exit status of the drain: $?"
+
+      - name: publish what the drain said, so it survives on the branch
+        if: always()
+        run: |
+          set -uo pipefail
+          python3 tools/gh_bridge.py --branch "$BRANCH" status --indent 0 || true
 
       - name: what the queue looks like now
         if: always()

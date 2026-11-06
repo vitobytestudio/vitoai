@@ -547,13 +547,13 @@ class Bridge:
         return task["id"]
 
     def state(self, tid: str, ref: str = "") -> str:
-        ref = ref or self.g.ref
+        ref = ref or self.g.ref or "HEAD"
         if self.g.read(self.result_path(tid), ref) is not None:
             return "done"
         if self.g.read(f"{RUNNING}/{tid}.json", ref) is not None:
             return "running"
         if self.g.read(self.pending_path(tid), ref) is not None:
-            return "pending"
+            return "pending (cancel requested)" if self.g.read(f"{CANCEL}/{tid}.json", ref) is not None else "pending"
         return "gone"
 
     def cancel(self, tid: str) -> None:
