@@ -1,0 +1,13 @@
+{
+  "ask": {
+    "mode": "",
+    "platform": "gemini",
+    "prompt": "poster frame: a rainy night, one lit window"
+  },
+  "client": "agent",
+  "created_at": 1793990021.8366144,
+  "env": "local",
+  "id": "1793990021836-poster-frame-a-rainy-night-o-3bc00c",
+  "kind": "ask",
+  "note": "live transport proof"
+}
