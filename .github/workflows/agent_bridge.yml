@@ -1,0 +1,116 @@
+name: agent-bridge (hosted)
+
+# GitHub's machines as one more worker for the git queue in tasks/.
+#
+# It drains tasks marked `--env hosted`: browsing and compute that need no login of yours. It is
+# deliberately NOT the path for Gemini or ChatGPT — those want a signed-in profile, and this
+# runner has none (nor should it: a datacenter IP with someone's session cookie is how accounts
+# die). The signed-in work belongs to the worker on your own machine, which attaches to the
+# browser you are already logged into. See agent_bridge_local.yml for that shape, and
+# tools/README.md for the runbook.
+#
+# What it is genuinely useful for: a queue you can kick from the web UI or by pushing a file,
+# results that arrive as commits (so an agent with no inbound port and a filtered egress still
+# gets them), and a fresh browser per run, which is the only honest way to run anything public.
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Prompt to queue (leave empty to only drain what is already queued)"
+        required: false
+        type: string
+      platform:
+        description: "Adapter to run it with"
+        required: false
+        type: choice
+        default: gemini
+        options: [gemini, chatgpt]
+      mode:
+        description: "Adapter mode"
+        required: false
+        type: choice
+        default: image
+        options: [image, research]
+      env:
+        description: "Which worker may take it — local means your own machine will do the work"
+        required: false
+        type: choice
+        default: hosted
+        options: [hosted, local]
+  push:
+    paths:
+      - "tasks/pending/**"
+  schedule:
+    - cron: "*/17 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-bridge-hosted
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    name: run what a stranger can run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROMPT: ${{ inputs.prompt }}
+      PLATFORM: ${{ inputs.platform }}
+      MODE: ${{ inputs.mode }}
+      TARGET_ENV: ${{ inputs.env }}
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: identity for the commits we push back
+        run: |
+          git config user.name "vito-bridge"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config pull.rebase true
+          git remote set-url --push origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: install (no browser download: we launch one ourselves below)
+        run: python -m pip install --quiet --upgrade pip playwright
+
+      - name: queue the dispatched prompt
+        if: ${{ github.event_name == 'workflow_dispatch' && env.PROMPT != '' }}
+        run: |
+          python3 tools/gh_bridge.py --branch "$BRANCH" ask \
+            --platform "${PLATFORM:-gemini}" \
+            --prompt "$PROMPT" \
+            --mode "${MODE:-image}" \
+            --env "${TARGET_ENV:-hosted}" \
+            --no-wait
+
+      - name: a throwaway browser, then drain this runner's share of the queue
+        run: |
+          set -euo pipefail
+          python -m playwright install chromium --with-deps >/dev/null
+          CHROME=$(ls -d "$HOME/.cache/ms-playwright/chromium-"*/chrome-linux/chrome | head -1)
+          nohup "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
+            --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-hosted about:blank \
+            >/tmp/chrome.log 2>&1 &
+          for _ in $(seq 40); do
+            curl -sf localhost:9222/json/version >/dev/null && break
+            sleep 0.5
+          done
+          curl -s localhost:9222/json/version | head -c 200 || tail -5 /tmp/chrome.log
+          python3 tools/gh_bridge.py --branch "$BRANCH" worker \
+            --once --env hosted --cdp-url http://127.0.0.1:9222 \
+            --no-launch-chrome --no-check-endpoint --heartbeat 0
+
+      - name: what the queue looks like now
+        if: always()
+        run: python3 tools/gh_bridge.py --branch "$BRANCH" status || true
