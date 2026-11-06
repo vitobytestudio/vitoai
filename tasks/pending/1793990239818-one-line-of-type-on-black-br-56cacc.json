@@ -1,0 +1,13 @@
+{
+  "ask": {
+    "mode": "",
+    "platform": "gemini",
+    "prompt": "one line of type on black: bridge"
+  },
+  "client": "agent",
+  "created_at": 1793990239.8183696,
+  "env": "hosted",
+  "id": "1793990239818-one-line-of-type-on-black-br-56cacc",
+  "kind": "ask",
+  "note": "hosted leg: a real runner, a real browser, no login"
+}
