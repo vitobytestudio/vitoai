@@ -291,10 +291,12 @@ class Git:
 
     @property
     def branch(self) -> str:
+        """The branch we push to, read from the checkout that asked — never from the workspace,
+        which is detached by design and would answer ``HEAD``."""
         if not self._branch:
-            b = self.out("rev-parse", "--abbrev-ref", "HEAD")
-            if b == "HEAD":
-                raise BridgeError("detached HEAD with no --branch: the bridge needs a branch to push to")
+            b = self.run("rev-parse", "--abbrev-ref", "HEAD", cwd=self.origin).stdout.strip()
+            if b in ("", "HEAD"):
+                raise BridgeError("no branch to push to: pass --branch <name>")
             self._branch = b
         return self._branch
 
@@ -1338,6 +1340,12 @@ def main(argv: Optional[list[str]] = None) -> int:
                 if not blocks:
                     raise BridgeError(f"{args.prompt_file} holds no text")
                 prompt = prompt or blocks[0]
+            if args.ping:
+                task = validate_task({"env": args.env, "kind": "ping", "note": args.note or "liveness check"})
+                b = Bridge(g, Path(args.out), cdp_url=args.cdp_url, poll=args.poll)
+                env = b.ask(task, wait=not args.no_wait, timeout=min(args.timeout, 180.0))
+                print(json.dumps(env, ensure_ascii=False, indent=indent))
+                return int(env.get("exit_code", 0))
             if not prompt:
                 raise BridgeError("--prompt or --prompt-file is required")
             ask: dict[str, Any] = {"platform": args.platform, "prompt": prompt}
