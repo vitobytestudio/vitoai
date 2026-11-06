@@ -419,15 +419,20 @@ class Git:
                 p.unlink()
 
     # -- the two primitives a queue needs --------------------------------------
-    def commit(self, paths: Iterable[str], message: str) -> bool:
+    def commit(self, paths: Iterable[str], message: str, skip_ci: bool = True) -> bool:
         """Commit exactly these paths (deletions included) onto the workspace tip. False when the
-        tree would not change, so a retry never produces an empty commit."""
+        tree would not change, so a retry never produces an empty commit.
+
+        ``skip_ci`` is the difference between a queue that can wake a workflow and one that burns
+        itself: every bookkeeping commit says ``[skip ci]`` (claims, results, heartbeats, prunes —
+        otherwise each run pushes a commit that triggers the next run forever), while the *request*
+        commit must not, because pushing it is exactly what a hosted worker is waiting to see."""
         paths = sorted(set(paths))
         if not paths:
             return False
         for attempt in range(3):
             base = self.out("rev-parse", "HEAD")
-            sha = self._plumbing_commit(base, paths, message)
+            sha = self._plumbing_commit(base, paths, message, skip_ci)
             if not sha:
                 return False
             moved = self.run("update-ref", "HEAD", sha, base)
@@ -440,7 +445,7 @@ class Git:
             time.sleep(0.2 * (attempt + 1))  # tip moved under us; rebuild on the new one
         raise BridgeError(f"could not commit onto {self.branch}: the tip keeps moving mid-write ({self.run('rev-parse', 'HEAD').combined[:160]})")
 
-    def _plumbing_commit(self, base: str, paths: list[str], message: str) -> str:
+    def _plumbing_commit(self, base: str, paths: list[str], message: str, skip_ci: bool = True) -> str:
         import tempfile
 
         fd, idx = tempfile.mkstemp(prefix="vito-index-", suffix=".idx")
@@ -465,7 +470,8 @@ class Git:
                 raise BridgeError("git write-tree produced nothing")
             if base and tree == self.run("rev-parse", f"{base}^{{tree}}").stdout.strip():
                 return ""  # nothing of ours to say
-            args = ["commit-tree", tree] + (["-p", base] if base else []) + ["-m", f"{message} [skip ci]"]
+            subject = f"{message} [skip ci]" if skip_ci else message
+            args = ["commit-tree", tree] + (["-p", base] if base else []) + ["-m", subject]
             sha = self._git(env, *args, extra=self.identity()).stdout.strip()
             if not sha:
                 raise BridgeError("git commit-tree failed")
@@ -535,7 +541,7 @@ class Bridge:
         if (self.g.repo / path).exists():
             raise BridgeError(f"{path} already exists in this checkout — reuse nothing, queue a new id")
         self.g.write(path, dump(task))
-        if self.g.commit([path], f"bridge: queue {task['id']} ({task['kind']}/{task['ask'].get('platform', '-')})"):
+        if self.g.commit([path], f"bridge: queue {task['id']} ({task['kind']}/{task['ask'].get('platform', '-')})", skip_ci=False):
             self.g.push()
         self.say(f"queued {task['id']} → {self.g.remote}/{self.g.branch}")
         return task["id"]
@@ -1144,11 +1150,18 @@ def self_check() -> int:
         task = validate_task({"env": "local", "ask": {"platform": "gemini", "prompt": "مرحبا"}})
         b.submit(task)
         check("queue: submit reaches the remote", (b.state(task["id"], gc.fetch() or "HEAD")) == "pending", task["id"])
+        subject = gc.run("log", "-1", "--format=%s").stdout.strip()
+        check("trigger: a request commit wakes CI, a bookkeeping commit never does",
+              "[skip ci]" not in subject, subject)
         check("queue: the client's own dirty file stays uncommitted",
               "notes.txt" not in gc.run("show", "--stat", "--name-only", "--format=", "HEAD").stdout)
         check("worker: takes a matching task", w.tick() is True)
         res = gw.read_json(Bridge.result_path(task["id"])) or {}
         check("worker: publishes a result", res.get("status") == "ok", json.dumps(res)[:200])
+        remote_head = gc.fetch()
+        last_subject = gc.run("log", "-1", "--format=%s", remote_head).stdout.strip()
+        check("trigger: the result commit is silent (no loop of runs waking runs)",
+              "[skip ci]" in last_subject, last_subject)
         check("worker: pending and running are cleared",
               not (gw.repo / Bridge.pending_path(task["id"])).exists() and not (gw.repo / f"{RUNNING}/{task['id']}").exists())
         check("result: indexes both artifacts", sorted(a["name"] for a in res.get("artifacts", [])) == ["answer.md", "img.png"], str([a["name"] for a in res.get("artifacts", [])]))
