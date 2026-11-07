@@ -1,0 +1,21 @@
+{
+  "claim": {
+    "at": 1794011266.5148826,
+    "env": "hosted",
+    "host": "linux-runnervm7aw5e",
+    "pid": 2245
+  },
+  "task": {
+    "ask": {
+      "mode": "",
+      "platform": "gemini",
+      "prompt": "one line of type on black: bridge"
+    },
+    "client": "agent",
+    "created_at": 1794011027.8355787,
+    "env": "hosted",
+    "id": "1794011027835-one-line-of-type-on-black-br-5472ef",
+    "kind": "ask",
+    "note": "hosted leg, with the fatal report"
+  }
+}
