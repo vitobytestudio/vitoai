@@ -15,8 +15,15 @@ name: agent-bridge (my machine)
 #
 #     python3 tools/gh_bridge.py worker
 #
-# The Actions leg adds exactly one thing: a prompt typed into the GitHub UI (or a queue file
-# pushed from anywhere) reaches a machine behind NAT without you logging into it.
+# The Actions leg adds exactly one thing: a prompt typed into the GitHub UI reaches a machine behind
+# NAT without you logging into it.
+#
+# Triggers, deliberately: `workflow_dispatch` only. This file used to fire on `push: tasks/pending/**`
+# and on a cron, and the first real test of that produced a job **pending forever** — a self-hosted
+# job with no runner online does not fail, it waits (24 hours, then GitHub cancels it), and a
+# starved queue looks identical to a slow one. A machine that is supposed to be listening should poll
+# the branch on its own (`tools/gh_bridge.py worker` under launchd/systemd); a workflow you press is
+# for the times you are standing in front of it.
 
 on:
   workflow_dispatch:
@@ -42,11 +49,6 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    paths:
-      - "tasks/pending/**"
-  schedule:
-    - cron: "*/7 * * * *"
 
 permissions:
   contents: write
