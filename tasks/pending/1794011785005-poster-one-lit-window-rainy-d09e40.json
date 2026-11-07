@@ -1,0 +1,13 @@
+{
+  "ask": {
+    "mode": "",
+    "platform": "gemini",
+    "prompt": "poster: one lit window, rainy night"
+  },
+  "client": "agent",
+  "created_at": 1794011785.0057237,
+  "env": "hosted",
+  "id": "1794011785005-poster-one-lit-window-rainy-d09e40",
+  "kind": "ask",
+  "note": ""
+}
