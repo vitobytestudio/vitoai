@@ -1,0 +1,21 @@
+{
+  "claim": {
+    "at": 1794011732.2934372,
+    "env": "hosted",
+    "host": "linux-runnervm7aw5e",
+    "pid": 2459
+  },
+  "task": {
+    "ask": {
+      "mode": "",
+      "platform": "gemini",
+      "prompt": "poster: one lit window, rainy night"
+    },
+    "client": "agent",
+    "created_at": 1794011690.8989947,
+    "env": "hosted",
+    "id": "1794011690898-poster-one-lit-window-rainy-a5844b",
+    "kind": "ask",
+    "note": ""
+  }
+}
