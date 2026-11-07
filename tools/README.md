@@ -116,6 +116,43 @@ the queue cannot wake the workflows by itself.
    host, and do not add `--remote-allow-origins=*` to make some client happy — that flag is the
    last guard, not a nuisance.
 
+### Where the truth lives
+
+A transaction never runs in the checkout that asked for it: each side writes into a detached
+worktree under `.vito-bridge/ws`, aligns it with `git fetch`, and pushes back. Your working tree
+stays yours — no staged files, no `reset --hard`, no commit that sweeps in the half-written thing
+you were editing. And because the queue and the CI share one branch, the *request* commit is the
+only one GitHub is allowed to see: claims, results, heartbeats and prunes all carry `[skip ci]`,
+which is what keeps a run from waking the next run forever.
+
+Every failure therefore arrives as a commit, not as a log. Actions writes its log body to
+`results-receiver.actions.githubusercontent.com`, which a sandbox with a short egress allowlist
+cannot read — so a worker publishes its own death instead: any fatal error lands in
+`tasks/HEARTBEAT.json` with the message, the traceback tail, and the exact invocation that produced
+it (`env`, `interval`, `allow`, endpoint, headless). Which means the whole system is debuggable from
+the one thing both sides can always touch:
+
 ```bash
-python3 tools/gh_bridge.py self-check     # offline: schema, argv, and a full queue round trip in a temp repo
+python3 tools/gh_bridge.py status              # every task's state + the last heartbeat, fatal included
+python3 tools/gh_bridge.py wait <id> --timeout 600
+python3 tools/gh_bridge.py self-check          # offline: schema, argv, and a full round trip in a temp repo
+```
+
+### Prove it on the real remote (no browser needed)
+
+Four commands, and they exercise the same three primitives the live loop uses — queue, claim,
+deliver — against whatever `origin` is:
+
+```bash
+python3 tools/gh_bridge.py ask --bridge --ping --env local --no-wait   # 1. a task appears on the branch
+git clone -b "$(git rev-parse --abbrev-ref HEAD)" "$PWD" /tmp/wk       # 2. a second machine, in miniature
+cd /tmp/wk && python3 tools/gh_bridge.py worker --once --env local     # 3. claim, run, push back
+cd - && python3 tools/gh_bridge.py wait <id>                           # 4. bytes back, sha256 verified
+```
+
+Expect step 4 to report `exit_code 5` and the sentence *"nothing answering at 127.0.0.1:9222"*:
+that is the honest answer of a worker with no browser, and it is the thing worth seeing arrive.
+
+```bash
+python3 tools/gh_bridge.py prune --keep 10 --apply   # the payloads are history too
 ```

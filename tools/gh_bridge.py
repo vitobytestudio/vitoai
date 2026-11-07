@@ -829,9 +829,11 @@ class Worker:
         allow = ",".join(sorted(self.allow)) if self.allow else "all installed"
         log(f"worker on {self.g.branch} (env={self.env}, cdp={resolve(self.cfg.cdp_url or None)}, allow={allow}, "
             f"once={bool(self.cfg.once)}, dry_run={bool(self.cfg.dry_run)})")
+        # the workspace first: if the browser launch below throws, the report has somewhere to be
+        # committed, and a fatal that cannot be published is a fatal nobody ever learns about
+        self.g.ensure_open()
         if not self.cfg.dry_run:
             self.ensure_chrome()
-        self.g.ensure_open()
         empty = 0
         while True:
             ran = self.tick()

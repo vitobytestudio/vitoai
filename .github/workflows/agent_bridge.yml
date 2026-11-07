@@ -4,14 +4,25 @@ name: agent-bridge (hosted)
 #
 # It drains tasks marked `--env hosted`: browsing and compute that need no login of yours. It is
 # deliberately NOT the path for Gemini or ChatGPT — those want a signed-in profile, and this
-# runner has none (nor should it: a datacenter IP with someone's session cookie is how accounts
-# die). The signed-in work belongs to the worker on your own machine, which attaches to the
-# browser you are already logged into. See agent_bridge_local.yml for that shape, and
-# tools/README.md for the runbook.
+# runner has none (nor should it: a datacenter IP holding someone's session cookie is how accounts
+# die). The signed-in work belongs to the worker on your own machine, which attaches to the browser
+# you are already logged into. See agent_bridge_local.yml for that shape, and tools/README.md for
+# the runbook.
 #
 # What it is genuinely useful for: a queue you can kick from the web UI or by pushing a file,
-# results that arrive as commits (so an agent with no inbound port and a filtered egress still
-# gets them), and a fresh browser per run, which is the only honest way to run anything public.
+# results that arrive as commits (so an agent with no inbound port and a filtered egress still gets
+# them), and a fresh browser per run — the only honest way to look at a public page.
+#
+# Two rules this file exists to obey:
+#
+# 1. Anything worth knowing must reach either the branch or an annotation. Actions writes its log
+#    body to a blob store that a sandbox with a short egress allowlist cannot read at all, so
+#    "check the log" is not advice anyone can follow from here. The queue reports per-task failures
+#    through tasks/done/, a crashing worker reports itself through tasks/HEARTBEAT.json, and this
+#    step reports its own exit code plus the tail of stderr as a ::error:: annotation, which the
+#    REST API does serve: gh api /repos/<repo>/check-runs/<job id>/annotations
+#  2. Actions runs `run:` blocks under `bash -e`, so any command that merely *fails* ends the step.
+#    The drain therefore runs with errexit off, and decides its own exit code.
 
 on:
   workflow_dispatch:
@@ -41,8 +52,6 @@ on:
   push:
     paths:
       - "tasks/pending/**"
-  schedule:
-    - cron: "*/17 * * * *"
 
 permissions:
   contents: write
@@ -81,8 +90,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "install — no browser download, we launch one ourselves below"
-        run: python -m pip install --quiet --upgrade pip playwright
+      - name: "playwright, and the browser it happens to have installed"
+        run: |
+          python -m pip install --quiet --upgrade pip playwright
+          python -m playwright --version
+          python -m playwright install chromium
+          ls -1 "$HOME/.cache/ms-playwright" || echo "no browser cache at all"
 
       - name: queue the dispatched prompt
         if: ${{ github.event_name == 'workflow_dispatch' && env.PROMPT != '' }}
@@ -94,37 +107,26 @@ jobs:
             --env "${TARGET_ENV:-hosted}" \
             --no-wait
 
-      - name: a throwaway browser, then drain this runner's share of the queue
+      - name: drain this runner's share of the queue
         run: |
-          set -uo pipefail
-          # Loud on purpose: the log body lives on a host some sandboxes cannot read, so anything
-          # worth knowing has to reach the branch. The worker reports per-task failures through
-          # tasks/done/, which is the channel that always works.
-          python -m playwright --version
-          python -m playwright install chromium || python -m playwright install --with-deps chromium || true
-          ls -1 "$HOME/.cache/ms-playwright" 2>/dev/null || echo "no browser cache at all"
-          CHROME=$(ls -d "$HOME/.cache/ms-playwright"/chromium-*/chrome-linux/chrome 2>/dev/null | head -1)
-          if [ -n "$CHROME" ]; then
-            nohup "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage \
-              --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-hosted about:blank \
-              >/tmp/chrome.log 2>&1 &
-            for _ in $(seq 40); do
-              curl -sf localhost:9222/json/version >/dev/null && break
-              sleep 0.5
-            done
-            curl -s localhost:9222/json/version | head -c 200 || { echo "chrome did not answer; its log:"; tail -20 /tmp/chrome.log; }
-          else
-            echo "no chromium binary from playwright — continuing anyway, so each task reports its own failure"
-          fi
-          # --no-check-endpoint: the worker must still answer the queue when the browser is missing,
-          # because a rejected task with a sentence beats a silent branch.
+          set +e
+          # The worker launches the browser itself, through the same code path a laptop uses:
+          # CHROME_PATH is the only hint it needs, and --launch-wait covers a cold profile. Fewer
+          # shell lines means fewer ways for a step to die before the queue gets an answer.
+          export CHROME_PATH=$(ls -d "$HOME/.cache/ms-playwright"/chromium-*/chrome-linux/chrome 2>/dev/null | head -1)
+          [ -n "$CHROME_PATH" ] || echo "::warning::no chromium from playwright — the worker will report each task's own failure"
           python3 tools/gh_bridge.py --branch "$BRANCH" worker \
-            --once --env hosted --cdp-url http://127.0.0.1:9222 \
-            --no-launch-chrome --no-check-endpoint --heartbeat 0
+            --once --env hosted \
+            --cdp-url http://127.0.0.1:9222 \
+            --profile /tmp/chrome-hosted --launch-wait 60 \
+            --no-check-endpoint --heartbeat 0 \
+            >/tmp/drain.json 2>/tmp/drain.err
           rc=$?
-          echo "drain exited $rc — the queue, and any fatal the worker published, follow"
+          cat /tmp/drain.json
+          sed 's/^/[tools] /' /tmp/drain.err
+          tail -c 1200 /tmp/drain.err | tr '\n' '~' | sed 's/~/\%0A/g' | sed 's/^/::error::drain exited '"$rc"' :: /'
           exit $rc
 
       - name: what the queue looks like now
         if: always()
-        run: python3 tools/gh_bridge.py --branch "$BRANCH" status
+        run: python3 tools/gh_bridge.py --branch "$BRANCH" status || true
