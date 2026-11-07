@@ -70,9 +70,9 @@ def find_first(target, selectors: Iterable[str], timeout: float = 0.0, visible: 
 
 
 FOLD = re.compile(r"[^0-9a-z\u0600-\u06ff]+")
-WALL_PHRASES = ("sign in", "signed out", "sign out", "log in", "logged out", "login", "get started",
-                "create an account", "continue to", "sign up", "use a browser account",
-                "تسجيل الدخول", "إنشاء حساب")
+WALL_PHRASES = ("sign in", "signed in", "signed out", "sign out", "log in", "logged out", "login",
+                "get started", "create an account", "continue to", "sign up", "use a browser account",
+                "not available in your location", "تسجيل الدخول", "إنشاء حساب", "غير متاح في منطقتك")
 
 
 def fold(text: str) -> str:

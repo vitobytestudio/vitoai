@@ -262,6 +262,9 @@ def self_check(args) -> int:
           drive.says_wall(real) and not drive.is_echo(real, "one line of type on black: echo gate"), real[:64])
     check("wall: a plain 'hard time' refusal is not wall wording, and must be caught another way",
           not drive.says_wall("I'm having a hard time fulfilling your request. Can I help you with something else instead?"))
+    check("wall: 'are you signed in?' and a regional lockout are both session talk",
+          drive.says_wall("Are you signed in? Image creation isn't available in your location yet.")
+          and drive.says_wall("هذه الميزة غير متاح في منطقتك"))
 
     class _FakePage:
         url = "https://example.invalid/app/1"
