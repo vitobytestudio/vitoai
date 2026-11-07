@@ -69,6 +69,48 @@ def find_first(target, selectors: Iterable[str], timeout: float = 0.0, visible: 
         time.sleep(0.3)
 
 
+FOLD = re.compile(r"[^0-9a-z\u0600-\u06ff]+")
+WALL_PHRASES = ("sign in", "log in", "login", "get started", "create an account", "continue to",
+                "sign up", "use a browser account", "تسجيل الدخول", "إنشاء حساب")
+
+
+def fold(text: str) -> str:
+    """Lowercase letters and digits, latin and Arabic, everything else a single space."""
+    return FOLD.sub(" ", (text or "").lower()).strip()
+
+
+def is_echo(text: str, prompt: str) -> bool:
+    """Is this *answer* only our own prompt coming back?
+
+    A logged-out assistant still paints the question into the conversation, and that echo settles
+    exactly like a reply — stable, non-empty, one new turn — so a pipeline that trusts "settled"
+    ends up cutting a film out of a sign-in wall. Blank counts as an echo: an empty answer node is
+    not an answer either. The small slack on the length is for a "Thinking" label or a trailing
+    cursor; anything that says something the prompt did not is a real reply.
+    """
+    a, p = fold(text), fold(prompt)
+    if not a:
+        return True
+    if a == p:
+        return True
+    # A wall around an echo is still an echo: take the authentication wording out first, then ask
+    # whether anything the prompt did not already say is left.
+    residual = a
+    for phrase in (fold(w) for w in WALL_PHRASES):
+        if phrase:
+            residual = residual.replace(phrase, " ")
+    residual = " ".join(residual.split())
+    if not residual or residual == p:
+        return True
+    return len(residual) <= len(p) + 16 and (residual in p or p in residual)
+
+
+def says_wall(text: str) -> bool:
+    """Does this text read like an authentication prompt rather than an answer?"""
+    low = fold(text)
+    return any(phrase in low for phrase in (fold(p) for p in WALL_PHRASES) if phrase)
+
+
 def any_visible(target, selectors: Iterable[str]) -> bool:
     return find_first(target, selectors, timeout=0) is not None
 

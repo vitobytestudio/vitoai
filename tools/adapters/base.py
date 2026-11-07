@@ -160,6 +160,39 @@ class BaseAdapter(ABC):
             progress=progress,
         )
 
+    def reject_echo(self, answer, prompt: str) -> None:
+        """Refuse to call a mirror an answer.
+
+        Two ways a page lies with a settled node: it shows only the prompt we sent (the logged-out
+        shell echoes it into the conversation), or it shows a sign-in wall around that echo. The
+        first is `NoResult`, because we cannot tell what the page wanted; the second is
+        `SessionExpired`, because there is exactly one fix and it is a person logging in. A picture
+        in the answer silences the check, since an image is the payload and the caption being short
+        is normal.
+        """
+        text = ""
+        try:
+            text = answer.inner_text() if hasattr(answer, "inner_text") else (getattr(answer, "text", "") or "")
+        except Exception:  # noqa: BLE001 - a node that vanished mid-read is not an answer either
+            text = ""
+        try:
+            pictures = int(answer.locator(self.IMG_SEL).count()) if hasattr(answer, "locator") else 0
+        except Exception:  # noqa: BLE001
+            pictures = 0
+        if pictures or not drive.is_echo(text, prompt):
+            return
+        body = " ".join(filter(None, [text, getattr(self, "page_hint", "") or ""]))[:400]
+        if drive.says_wall(body):
+            raise SessionExpired(
+                f"{self.name}: the settled node is a sign-in wall around an echo of our prompt — "
+                "log in once in that browser (the answer arrived as "
+                f"{len((text or '').strip())} chars of our own question)"
+            )
+        raise NoResult(
+            f"{self.name}: the settled answer is only an echo of the prompt "
+            f"({len((text or '').strip())} chars, no image) — nothing was answered"
+        )
+
     def save_images(self, answer, stem: str) -> list:
         return drive.harvest_images(
             self.page, self.tab.page.context, answer, self.out_dir, stem,
@@ -190,6 +223,7 @@ class BaseAdapter(ABC):
         answer = self.wait_for_answer()
         if answer is None:
             raise NotSettled(f"{self.name}: no settled answer within {self.cfg.timeout:.0f}s")
+        self.reject_echo(answer, prompt)
         stem = f"{self.name}-{drive.slugify(prompt)}"
         artifacts = [a for a in (self.extract(answer, stem) or []) if a]
         if not artifacts:

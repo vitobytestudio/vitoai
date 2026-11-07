@@ -243,6 +243,77 @@ def self_check(args) -> int:
     check("slugify keeps Arabic", "ممر-مظلم" in drive.slugify("ممر مظلم"))
     check("slugify survives junk", drive.slugify("  ///  ***  ") == "task")
 
+    check("echo: a prompt coming back is not an answer",
+          drive.is_echo("one line of type on black: bridge", "one line of type on black: bridge"))
+    check("echo: blank counts too", drive.is_echo("   ", "anything at all"))
+    check("echo: a real reply survives the check",
+          not drive.is_echo("Here you go. Twelve frames, no text, as asked — see the notes below.", "one line"))
+    check("echo: a caption beside a picture is not judged",
+          not drive.is_echo("A rainy night, one lit window, 35mm.", "make me a poster of a rainy night with one lit window"))
+    check("echo: punctuation and casing do not hide a mirror",
+          drive.is_echo("ONE LINE OF TYPE ON BLACK: BRIDGE!", "one line of type on black: bridge"))
+    check("echo: a wall wrapped around our prompt is still an echo",
+          drive.is_echo("Sign in to continue to Gemini\n\none line of type on black", "one line of type on black"))
+    check("wall: sign-in wording is recognised", drive.says_wall("Sign in to continue to Gemini") and drive.says_wall("تسجيل الدخول للمتابعة"))
+    check("wall: an answer is not a wall", not drive.says_wall("Here is the poster, and a note about the crop."))
+
+    class _FakePage:
+        url = "https://example.invalid/app/1"
+
+    class _FakeTab:
+        page = _FakePage()
+        host = "example.invalid"
+
+    class _EchoAdapter(adapters.BaseAdapter):
+        name, entry, hosts = "_echocheck", "https://example.invalid", ("example.invalid",)
+
+        def check_session(self) -> None:
+            return None
+
+        def submit(self, prompt: str) -> None:
+            return None
+
+        def wait_for_answer(self):
+            return FakeTurn(self._prompt, 0)
+
+        def extract(self, answer, stem: str) -> list:
+            return []
+
+    cfg = adapters.Config(out="/tmp/tools-selfcheck")
+    for body, want, why in (
+        ("one line of type on black", NoResult, "an echo with no wall wording is an unanswered job"),
+        ("Sign in to continue\n\none line of type on black", adapters.SessionExpired, "a wall is a login problem"),
+    ):
+        a = _EchoAdapter(_FakeTab(), cfg)
+        a._prompt = "one line of type on black"
+        a.wait_for_answer = lambda body=body, a=a: FakeTurn(body, 0)
+        try:
+            a.run("one line of type on black")
+            check(f"echo gate: {why}", False, "the run was accepted; it should have been refused")
+        except want as e:
+            check(f"echo gate: {why}", True, str(e)[:96])
+        except Exception as e:  # noqa: BLE001
+            check(f"echo gate: {why}", False, f"{type(e).__name__}: {e}")
+
+    class _PictureAdapter(_EchoAdapter):
+        name = "_piccheck"
+
+        def wait_for_answer(self):
+            return FakeTurn(self._prompt, 1)
+
+        def extract(self, answer, stem: str) -> list:
+            return [{"path": "/tmp/tools-selfcheck/x.png", "bytes": 4, "kind": "image", "how": "screenshot"}]
+
+    pa = _PictureAdapter(_FakeTab(), cfg)
+    pa._prompt = "one line of type on black"
+    Path("/tmp/tools-selfcheck").mkdir(parents=True, exist_ok=True)
+    Path("/tmp/tools-selfcheck/x.png").write_bytes(b"PNG1")
+    try:
+        out = pa.run("one line of type on black")
+        check("echo gate: a picture in the answer outranks a short caption", bool(out["artifacts"]), f"{out['bytes']} bytes")
+    except Exception as e:  # noqa: BLE001
+        check("echo gate: a picture in the answer outranks a short caption", False, f"{type(e).__name__}: {e}")
+
     tmp = Path("/tmp/tools-selfcheck")
     for f in tmp.glob("*"):
         try:
