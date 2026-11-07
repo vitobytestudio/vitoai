@@ -1,0 +1,76 @@
+{
+  "artifacts": [
+    {
+      "bytes": 378,
+      "how": "metadata",
+      "kind": "sidecar",
+      "name": "gemini-poster-one-lit-window-rainy-night-20261107-003547.json",
+      "sha256": "837ff4fe14d6e695de777753712d62c0b6ff1ce77b9df25d276cd05e3554a490"
+    },
+    {
+      "bytes": 218,
+      "how": "inner_text",
+      "kind": "text",
+      "name": "gemini-poster-one-lit-window-rainy-night-20261107-003547.md",
+      "sha256": "6079ca1a9720684b40c77beb2fc21a8fd9ca514cb2b8180a7182802b46a37d54"
+    }
+  ],
+  "chrome": {
+    "detail": "Chrome/156.0.8078.79",
+    "endpoint": "http://127.0.0.1:9222",
+    "launched": true,
+    "log": "/tmp/chrome-hosted.cdp.log"
+  },
+  "env": "hosted",
+  "error": null,
+  "exit_code": 0,
+  "id": "1794011690898-poster-one-lit-window-rainy-a5844b",
+  "kind": "ask",
+  "platform": "gemini",
+  "runner": {
+    "artifacts": [
+      {
+        "bytes": 218,
+        "how": "inner_text",
+        "kind": "text",
+        "path": "/home/runner/work/vitoai/vitoai/.vito-bridge/work/1794011690898-poster-one-lit-window-rainy-a5844b/artifacts/gemini-poster-one-lit-window-rainy-night-20261107-003547.md"
+      },
+      {
+        "bytes": 378,
+        "how": "metadata",
+        "kind": "sidecar",
+        "path": "/home/runner/work/vitoai/vitoai/.vito-bridge/work/1794011690898-poster-one-lit-window-rainy-a5844b/artifacts/gemini-poster-one-lit-window-rainy-night-20261107-003547.json"
+      }
+    ],
+    "bytes": 596,
+    "connection": {
+      "browser": "Chrome/156.0.8078.79",
+      "endpoint": "http://127.0.0.1:9222",
+      "operator_tabs": 1,
+      "tabs_opened": 1,
+      "tabs_still_ours": 0
+    },
+    "error": null,
+    "exit_code": 0,
+    "host": "gemini.google.com",
+    "ok": true,
+    "platform": "gemini",
+    "prompt": "poster: one lit window, rainy night",
+    "seconds": 13.2,
+    "seconds_total": 13.13
+  },
+  "skipped": [],
+  "status": "ok",
+  "timings": {
+    "finished_at": 1794011747.6884518,
+    "queued_at": 1794011690.8989947,
+    "seconds": 13.2,
+    "started_at": 1794011734.4568746
+  },
+  "worker": {
+    "endpoint": "http://127.0.0.1:9222",
+    "host": "linux-runnervm7aw5e",
+    "pid": 2459,
+    "python": "3.12.16"
+  }
+}

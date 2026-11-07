@@ -1,0 +1,23 @@
+{
+  "artifacts": [],
+  "chrome": {
+    "detail": "Chrome/156.0.8078.79",
+    "endpoint": "http://127.0.0.1:9222",
+    "launched": true,
+    "log": "/tmp/chrome-hosted.cdp.log"
+  },
+  "env": "hosted",
+  "error": "cancelled before it started",
+  "exit_code": 7,
+  "id": "1793990239818-one-line-of-type-on-black-br-56cacc",
+  "kind": "ask",
+  "status": "cancelled",
+  "timings": {
+    "finished_at": 1794011262.0818982,
+    "queued_at": 1793990239.8183696
+  },
+  "worker": {
+    "host": "linux-runnervm7aw5e",
+    "pid": 2245
+  }
+}
