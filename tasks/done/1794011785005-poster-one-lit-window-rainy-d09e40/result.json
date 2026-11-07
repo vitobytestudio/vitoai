@@ -1,0 +1,47 @@
+{
+  "artifacts": [],
+  "chrome": {
+    "detail": "Chrome/156.0.8078.79",
+    "endpoint": "http://127.0.0.1:9222",
+    "launched": true,
+    "log": "/tmp/chrome-hosted.cdp.log"
+  },
+  "env": "hosted",
+  "error": "NoResult: gemini: image was asked for a picture and the settled answer holds none (168 chars of prose: \"Are you signed in? I can search for images, but can't seem to create any for you right now. It's also possible that image creation isn't available in your locat\")",
+  "exit_code": 4,
+  "id": "1794011785005-poster-one-lit-window-rainy-d09e40",
+  "kind": "ask",
+  "platform": "gemini",
+  "runner": {
+    "artifacts": [],
+    "bytes": 0,
+    "connection": {
+      "browser": "Chrome/156.0.8078.79",
+      "endpoint": "http://127.0.0.1:9222",
+      "operator_tabs": 1,
+      "tabs_opened": 1,
+      "tabs_still_ours": 0
+    },
+    "error": "NoResult: gemini: image was asked for a picture and the settled answer holds none (168 chars of prose: \"Are you signed in? I can search for images, but can't seem to create any for you right now. It's also possible that image creation isn't available in your locat\")",
+    "exit_code": 4,
+    "ok": false,
+    "platform": "gemini",
+    "prompt": "poster: one lit window, rainy night",
+    "seconds": 12.4,
+    "seconds_total": 12.27
+  },
+  "skipped": [],
+  "status": "error",
+  "timings": {
+    "finished_at": 1794011838.8320532,
+    "queued_at": 1794011785.0057237,
+    "seconds": 12.4,
+    "started_at": 1794011826.4767458
+  },
+  "worker": {
+    "endpoint": "http://127.0.0.1:9222",
+    "host": "linux-runnervm7aw5e",
+    "pid": 2225,
+    "python": "3.12.16"
+  }
+}
