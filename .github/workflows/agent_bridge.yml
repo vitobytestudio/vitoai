@@ -121,14 +121,10 @@ jobs:
           python3 tools/gh_bridge.py --branch "$BRANCH" worker \
             --once --env hosted --cdp-url http://127.0.0.1:9222 \
             --no-launch-chrome --no-check-endpoint --heartbeat 0
-          echo "exit status of the drain: $?"
-
-      - name: publish what the drain said, so it survives on the branch
-        if: always()
-        run: |
-          set -uo pipefail
-          python3 tools/gh_bridge.py --branch "$BRANCH" status --indent 0 || true
+          rc=$?
+          echo "drain exited $rc — the queue, and any fatal the worker published, follow"
+          exit $rc
 
       - name: what the queue looks like now
         if: always()
-        run: python3 tools/gh_bridge.py --branch "$BRANCH" status || true
+        run: python3 tools/gh_bridge.py --branch "$BRANCH" status

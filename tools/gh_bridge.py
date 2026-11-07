@@ -799,6 +799,33 @@ class Worker:
 
     # -- loop -----------------------------------------------------------------
     def run_forever(self) -> int:
+        """Everything is wrapped, because a worker that dies quietly is worse than one that dies
+        loudly where nobody watches: the person waiting on a task is not looking at the CI UI, and
+        in some sandboxes the log body is not even readable. A fatal error therefore becomes a
+        commit on the branch, where the client is already polling."""
+        try:
+            return self._loop()
+        except BaseException as e:  # noqa: BLE001 - report first, then re-raise unchanged
+            self.report_failure(e)
+            if isinstance(e, BridgeError):
+                raise
+            raise BridgeError(f"{type(e).__name__}: {e}") from e
+
+    def report_failure(self, exc: BaseException) -> None:
+        import traceback
+
+        fatal = {
+            "error": f"{type(exc).__name__}: {exc}"[:700],
+            "trace": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))[-1500:],
+            "at": time.time(),
+        }
+        try:
+            self.heartbeat(force=True, fatal=fatal)
+            log(f"reported to {HEARTBEAT} on {self.g.branch}: {fatal['error'][:160]}")
+        except Exception as e:  # noqa: BLE001 - the report is best effort; the exception is the truth
+            log(f"could not publish the failure: {e}")
+
+    def _loop(self) -> int:
         allow = ",".join(sorted(self.allow)) if self.allow else "all installed"
         log(f"worker on {self.g.branch} (env={self.env}, cdp={resolve(self.cfg.cdp_url or None)}, allow={allow}, "
             f"once={bool(self.cfg.once)}, dry_run={bool(self.cfg.dry_run)})")
@@ -999,9 +1026,11 @@ class Worker:
                 log(f"the result is committed but not pushed: {e}")
 
     # -- liveness -------------------------------------------------------------
-    def heartbeat(self, force: bool = False) -> None:
+    def heartbeat(self, force: bool = False, fatal: Optional[dict] = None) -> None:
         step = float(self.cfg.heartbeat or 0)
-        if step <= 0 or (not force and time.time() - self.last_hb < step):
+        if step <= 0 and not fatal:
+            return
+        if not force and not fatal and time.time() - self.last_hb < step:
             return
         self.last_hb = time.time()
         alive, detail = endpoint_alive(self.cfg.cdp_url)
@@ -1010,8 +1039,12 @@ class Worker:
             "pid": os.getpid(), "env": self.env, "interval": step, "idle": round(self.idle, 1),
             "done_total": self.total, "cdp": resolve(self.cfg.cdp_url or None), "cdp_alive": alive,
             "cdp_detail": str(detail)[:200], "python": sys.version.split()[0],
+            "argv": {"env": self.env, "once": bool(self.cfg.once), "interval": self.cfg.interval,
+                     "allow": sorted(self.allow) if self.allow else None, "cdp_url": self.cfg.cdp_url,
+                     "launch_chrome": bool(self.cfg.launch_chrome), "headless": bool(self.cfg.headless)},
+            "fatal": fatal,
         }))
-        if self.g.commit([HEARTBEAT], f"bridge: heartbeat {host_tag()}"):
+        if self.g.commit([HEARTBEAT], f"bridge: heartbeat {host_tag()}" + (" — fatal" if fatal else "")):
             try:
                 self.g.push()
             except BridgeError:
@@ -1188,6 +1221,15 @@ def self_check() -> int:
         w.heartbeat(force=True)
         hb = gc.read_json(HEARTBEAT, gc.fetch()) or {}
         check("heartbeat: visible to the client, with env and liveness", hb.get("env") == "local" and "epoch" in hb, json.dumps(hb)[:150])
+        check("heartbeat: carries its own invocation, so a remote worker is reproducible",
+              hb.get("argv", {}).get("env") == "local" and "cdp_url" in hb.get("argv", {}), json.dumps(hb.get("argv"))[:140])
+        w.report_failure(RuntimeError("a worker that dies must say so on the branch"))
+        hb2 = gc.read_json(HEARTBEAT, gc.fetch()) or {}
+        check("fatal: a crash is published where the client is already polling",
+              "a worker that dies" in str((hb2.get("fatal") or {}).get("error")), json.dumps(hb2.get("fatal"))[:200])
+        check("fatal: with the invocation and a traceback, since the CI log may be unreadable",
+              hb2.get("fatal", {}).get("trace", "").rstrip().endswith("RuntimeError: a worker that dies must say so on the branch")
+              and hb2.get("fatal", {}).get("at"), str(hb2.get("fatal", {}).get("trace"))[-140:])
 
         second = validate_task({"env": "local", "ask": {"platform": "gemini", "prompt": "second"}})
         b.submit(second)
@@ -1432,3 +1474,7 @@ if __name__ == "__main__":
         sys.exit(EXIT["bridge"])
     except KeyboardInterrupt:
         sys.exit(130)
+    except Exception as e:  # noqa: BLE001 - stdout stays a JSON document, whatever happened
+        print(json.dumps({"ok": False, "error": f"{type(e).__name__}: {e}"}, ensure_ascii=False))
+        log(f"{type(e).__name__}: {e}")
+        sys.exit(EXIT["bridge"])
