@@ -260,6 +260,8 @@ def self_check(args) -> int:
             "signed out or image creation may not be available in your location yet.")
     check("wall: a prose apology from a logged-out assistant is a session problem, not ok",
           drive.says_wall(real) and not drive.is_echo(real, "one line of type on black: echo gate"), real[:64])
+    check("wall: a plain 'hard time' refusal is not wall wording, and must be caught another way",
+          not drive.says_wall("I'm having a hard time fulfilling your request. Can I help you with something else instead?"))
 
     class _FakePage:
         url = "https://example.invalid/app/1"
@@ -317,6 +319,21 @@ def self_check(args) -> int:
         check("echo gate: a logged-out apology asked for a picture is a session failure", True, str(e)[:110])
     except Exception as e:  # noqa: BLE001
         check("echo gate: a logged-out apology asked for a picture is a session failure", False, f"{type(e).__name__}: {e}")
+
+    class _StubbornRefusal(_WallAdapter):
+        name = "_refusalcheck"
+
+        def wait_for_answer(self):
+            return FakeTurn("I'm having a hard time fulfilling your request. Can I help you with something else instead?", 0)
+
+    sr = _StubbornRefusal(_FakeTab(), cfg)
+    try:
+        sr.run("poster: one lit window, rainy night")
+        check("echo gate: a refusal with no picture in it is never filed as a result", False, "accepted as ok")
+    except NoResult as e:
+        check("echo gate: a refusal with no picture in it is never filed as a result", True, str(e)[:118])
+    except Exception as e:  # noqa: BLE001
+        check("echo gate: a refusal with no picture in it is never filed as a result", False, f"{type(e).__name__}: {e}")
 
     class _TextAdapter(_WallAdapter):
         name = "_textcheck"

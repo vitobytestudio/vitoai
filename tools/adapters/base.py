@@ -161,14 +161,19 @@ class BaseAdapter(ABC):
         )
 
     def reject_echo(self, answer, prompt: str) -> None:
-        """Refuse to call a mirror an answer.
+        """Refuse to call a mirror an answer, and refuse to call an apology a picture.
 
-        Two ways a page lies with a settled node: it shows only the prompt we sent (the logged-out
-        shell echoes it into the conversation), or it shows a sign-in wall around that echo. The
-        first is `NoResult`, because we cannot tell what the page wanted; the second is
-        `SessionExpired`, because there is exactly one fix and it is a person logging in. A picture
-        in the answer silences the check, since an image is the payload and the caption being short
-        is normal.
+        Three ways a settled node is not a result. It can be only the prompt we sent back at us (the
+        logged-out shell paints the question into the conversation, and that echo is stable, non-empty
+        and arrives as one new turn — indistinguishable by shape). It can be a wall: prose about signing
+        in, an account state, a feature unavailable here. Or it can be a courteous refusal with nothing
+        in it, which no rule about wording will ever catch reliably.
+
+        So the rules, in order of trustworthiness: a picture in the answer ends the enquiry; an adapter
+        that was asked for a picture *requires* one, whatever the sentence says; and everything else
+        falls back to the mirror test. An echo with authentication wording is a session problem, since
+        there is exactly one fix and it is a person. A refusal without a picture is `NoResult` with the
+        page's own words quoted, because the alternative is filing 282 bytes of regret as a deliverable.
         """
         text = ""
         try:
@@ -181,24 +186,26 @@ class BaseAdapter(ABC):
             pictures = 0
         if pictures:
             return
-        echo = drive.is_echo(text, prompt)
+        quoted = " ".join((text or "").split())[:160]
         wall = drive.says_wall(text or "") or bool(drive.says_wall(getattr(self, "page_hint", "") or ""))
-        # A refusal in prose only counts as a failure where a picture was the product. Ask ChatGPT
-        # a question about sessions and "you might be signed out" *is* the answer; ask Gemini for a
-        # frame and the same sentence is a wall, however politely it is phrased.
+        echo = drive.is_echo(text, prompt)
+        # A text-first adapter keeps a sentence about sessions: asked about logins, that is the answer.
         wants = bool(getattr(self, "WANTS_IMAGE", False)) and not self.cfg.mode.strip().lower().startswith(("text", "look"))
-        if not (echo or (wall and wants)):
-            return
-        if wall:
-            raise SessionExpired(
-                f"{self.name}: the page answered in prose about signing in rather than with a "
-                f"result ({len((text or '').strip())} chars: {' '.join((text or '').split())[:120]!r}) — "
-                "that is an account state, and only a person can change it"
+        if wants or echo:
+            if wall:
+                raise SessionExpired(
+                    f"{self.name}: the page is talking about signing in, not about the job — "
+                    f"log in once in that browser (it said: {quoted!r})"
+                )
+            if wants:
+                raise NoResult(
+                    f"{self.name}: {self.cfg.mode or 'image'} was asked for a picture and the settled "
+                    f"answer holds none ({len((text or '').strip())} chars of prose: {quoted!r})"
+                )
+            raise NoResult(
+                f"{self.name}: the settled answer is only an echo of the prompt "
+                f"({len((text or '').strip())} chars, no image) — nothing was answered"
             )
-        raise NoResult(
-            f"{self.name}: the settled answer is only an echo of the prompt "
-            f"({len((text or '').strip())} chars, no image) — nothing was answered"
-        )
 
     def save_images(self, answer, stem: str) -> list:
         return drive.harvest_images(
