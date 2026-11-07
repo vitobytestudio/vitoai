@@ -256,6 +256,10 @@ def self_check(args) -> int:
           drive.is_echo("Sign in to continue to Gemini\n\none line of type on black", "one line of type on black"))
     check("wall: sign-in wording is recognised", drive.says_wall("Sign in to continue to Gemini") and drive.says_wall("تسجيل الدخول للمتابعة"))
     check("wall: an answer is not a wall", not drive.says_wall("Here is the poster, and a note about the crop."))
+    real = ("I can search for images, but can't create any for you at the moment. You might be "
+            "signed out or image creation may not be available in your location yet.")
+    check("wall: a prose apology from a logged-out assistant is a session problem, not ok",
+          drive.says_wall(real) and not drive.is_echo(real, "one line of type on black: echo gate"), real[:64])
 
     class _FakePage:
         url = "https://example.invalid/app/1"
@@ -294,6 +298,40 @@ def self_check(args) -> int:
             check(f"echo gate: {why}", True, str(e)[:96])
         except Exception as e:  # noqa: BLE001
             check(f"echo gate: {why}", False, f"{type(e).__name__}: {e}")
+
+    apology = ("I can search for images, but can't create any for you at the moment. You might be "
+               "signed out or image creation may not be available in your location yet.")
+
+    class _WallAdapter(_EchoAdapter):
+        name = "_wallcheck"
+        WANTS_IMAGE = True
+
+        def wait_for_answer(self):
+            return FakeTurn(apology, 0)
+
+    wa = _WallAdapter(_FakeTab(), cfg)
+    try:
+        wa.run("one line of type on black: echo gate")
+        check("echo gate: a logged-out apology asked for a picture is a session failure", False, "accepted as ok")
+    except SessionExpired as e:
+        check("echo gate: a logged-out apology asked for a picture is a session failure", True, str(e)[:110])
+    except Exception as e:  # noqa: BLE001
+        check("echo gate: a logged-out apology asked for a picture is a session failure", False, f"{type(e).__name__}: {e}")
+
+    class _TextAdapter(_WallAdapter):
+        name = "_textcheck"
+        WANTS_IMAGE = False
+
+        def extract(self, answer, stem: str) -> list:
+            return [{"path": "/tmp/tools-selfcheck/t.md", "bytes": 9, "kind": "text", "how": "inner_text"}]
+
+    Path("/tmp/tools-selfcheck/t.md").write_text("# prose\n", encoding="utf-8")
+    ta = _TextAdapter(_FakeTab(), cfg)
+    try:
+        out = ta.run("are sessions a thing")
+        check("echo gate: the same sentence in a text-first job is the answer, kept", bool(out["artifacts"]))
+    except Exception as e:  # noqa: BLE001
+        check("echo gate: the same sentence in a text-first job is the answer, kept", False, f"{type(e).__name__}: {e}")
 
     class _PictureAdapter(_EchoAdapter):
         name = "_piccheck"

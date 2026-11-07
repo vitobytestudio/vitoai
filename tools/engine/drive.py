@@ -70,8 +70,9 @@ def find_first(target, selectors: Iterable[str], timeout: float = 0.0, visible: 
 
 
 FOLD = re.compile(r"[^0-9a-z\u0600-\u06ff]+")
-WALL_PHRASES = ("sign in", "log in", "login", "get started", "create an account", "continue to",
-                "sign up", "use a browser account", "تسجيل الدخول", "إنشاء حساب")
+WALL_PHRASES = ("sign in", "signed out", "sign out", "log in", "logged out", "login", "get started",
+                "create an account", "continue to", "sign up", "use a browser account",
+                "تسجيل الدخول", "إنشاء حساب")
 
 
 def fold(text: str) -> str:
@@ -106,7 +107,12 @@ def is_echo(text: str, prompt: str) -> bool:
 
 
 def says_wall(text: str) -> bool:
-    """Does this text read like an authentication prompt rather than an answer?"""
+    """Does this text read like an authentication state rather than an answer?
+
+    Deliberately wider than a login button: the logged-out assistants do answer, in prose, with an
+    apology about signing in or a feature that is unavailable here. That is not an answer to save,
+    and it is not a page-shape failure either — it is the one case where the fix is a person, so it
+    has to leave as exit 2 and say so."""
     low = fold(text)
     return any(phrase in low for phrase in (fold(p) for p in WALL_PHRASES) if phrase)
 

@@ -179,14 +179,21 @@ class BaseAdapter(ABC):
             pictures = int(answer.locator(self.IMG_SEL).count()) if hasattr(answer, "locator") else 0
         except Exception:  # noqa: BLE001
             pictures = 0
-        if pictures or not drive.is_echo(text, prompt):
+        if pictures:
             return
-        body = " ".join(filter(None, [text, getattr(self, "page_hint", "") or ""]))[:400]
-        if drive.says_wall(body):
+        echo = drive.is_echo(text, prompt)
+        wall = drive.says_wall(text or "") or bool(drive.says_wall(getattr(self, "page_hint", "") or ""))
+        # A refusal in prose only counts as a failure where a picture was the product. Ask ChatGPT
+        # a question about sessions and "you might be signed out" *is* the answer; ask Gemini for a
+        # frame and the same sentence is a wall, however politely it is phrased.
+        wants = bool(getattr(self, "WANTS_IMAGE", False)) and not self.cfg.mode.strip().lower().startswith(("text", "look"))
+        if not (echo or (wall and wants)):
+            return
+        if wall:
             raise SessionExpired(
-                f"{self.name}: the settled node is a sign-in wall around an echo of our prompt — "
-                "log in once in that browser (the answer arrived as "
-                f"{len((text or '').strip())} chars of our own question)"
+                f"{self.name}: the page answered in prose about signing in rather than with a "
+                f"result ({len((text or '').strip())} chars: {' '.join((text or '').split())[:120]!r}) — "
+                "that is an account state, and only a person can change it"
             )
         raise NoResult(
             f"{self.name}: the settled answer is only an echo of the prompt "

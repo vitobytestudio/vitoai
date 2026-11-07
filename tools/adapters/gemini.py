@@ -43,6 +43,8 @@ class Gemini(BaseAdapter):
         "mat-progress-bar",
         'button:has-text("Stop generating")',
     )
+    #: a Gemini job without a picture in it did not happen, however well the sentence reads
+    WANTS_IMAGE = True
     TURNS = 'model-response, .model-response-text, [data-test-id*="response"]'
     CONSENT = (
         'button:has-text("Accept all")',
