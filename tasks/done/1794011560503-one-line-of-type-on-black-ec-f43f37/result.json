@@ -1,0 +1,76 @@
+{
+  "artifacts": [
+    {
+      "bytes": 380,
+      "how": "metadata",
+      "kind": "sidecar",
+      "name": "gemini-one-line-of-type-on-black-echo-gate-20261107-003334.json",
+      "sha256": "80f3de946dec08a9da33ba2ef9bf75f05bddb63ba74c15276c9d4529efb0e514"
+    },
+    {
+      "bytes": 282,
+      "how": "inner_text",
+      "kind": "text",
+      "name": "gemini-one-line-of-type-on-black-echo-gate-20261107-003334.md",
+      "sha256": "d30aa2db4d7d16ef34d31e9d66c0f842352e5b01aa0a3da5b3c04598b19eb109"
+    }
+  ],
+  "chrome": {
+    "detail": "Chrome/156.0.8078.79",
+    "endpoint": "http://127.0.0.1:9222",
+    "launched": true,
+    "log": "/tmp/chrome-hosted.cdp.log"
+  },
+  "env": "hosted",
+  "error": null,
+  "exit_code": 0,
+  "id": "1794011560503-one-line-of-type-on-black-ec-f43f37",
+  "kind": "ask",
+  "platform": "gemini",
+  "runner": {
+    "artifacts": [
+      {
+        "bytes": 282,
+        "how": "inner_text",
+        "kind": "text",
+        "path": "/home/runner/work/vitoai/vitoai/.vito-bridge/work/1794011560503-one-line-of-type-on-black-ec-f43f37/artifacts/gemini-one-line-of-type-on-black-echo-gate-20261107-003334.md"
+      },
+      {
+        "bytes": 380,
+        "how": "metadata",
+        "kind": "sidecar",
+        "path": "/home/runner/work/vitoai/vitoai/.vito-bridge/work/1794011560503-one-line-of-type-on-black-ec-f43f37/artifacts/gemini-one-line-of-type-on-black-echo-gate-20261107-003334.json"
+      }
+    ],
+    "bytes": 662,
+    "connection": {
+      "browser": "Chrome/156.0.8078.79",
+      "endpoint": "http://127.0.0.1:9222",
+      "operator_tabs": 1,
+      "tabs_opened": 1,
+      "tabs_still_ours": 0
+    },
+    "error": null,
+    "exit_code": 0,
+    "host": "gemini.google.com",
+    "ok": true,
+    "platform": "gemini",
+    "prompt": "one line of type on black: echo gate",
+    "seconds": 11.8,
+    "seconds_total": 11.72
+  },
+  "skipped": [],
+  "status": "ok",
+  "timings": {
+    "finished_at": 1794011614.7626355,
+    "queued_at": 1794011560.5037038,
+    "seconds": 11.8,
+    "started_at": 1794011602.9592788
+  },
+  "worker": {
+    "endpoint": "http://127.0.0.1:9222",
+    "host": "linux-runnervm7aw5e",
+    "pid": 2219,
+    "python": "3.12.16"
+  }
+}
