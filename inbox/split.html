@@ -87,13 +87,13 @@
 
 <div class="step" id="s2" hidden>
   <h2>٢ · حجم الجزء الواحد</h2>
-  <p class="sub">١٦ ميغابايت اختيار مريح: بعيد عن سقف الـ 25 ومناسب لبطء الاتصال. إن رفض GitHub ملفاً
+  <p class="sub">٢٤ ميغابايت يعطي أقل عدد ملفات ويبقى تحت سقف الـ 25. وإن كان اتصالك بطيئاً فـ ٨ أنجى. إن رفض GitHub ملفاً
      صغّرته، وإن كان عندك اتصال سريع كبّرته.</p>
   <div class="row">
     <select id="chunk">
       <option value="8">8 MB — أبطأ اتصال / أكثر أماناً</option>
-      <option value="16" selected>16 MB — الموصى به</option>
-      <option value="24">24 MB — أقل عدد أجزاء</option>
+      <option value="16">16 MB — اتصال أبطأ</option>
+      <option value="24" selected>24 MB — أقل عدد (الموصى به)</option>
     </select>
     <div style="color:var(--dim);font-size:13.5px" id="plan">—</div>
   </div>
@@ -116,14 +116,15 @@
     <button class="ghost" id="dlAll">تنزيل كل الأجزاء</button>
     <button class="ghost" id="dlMan">تنزيل MANIFEST.txt</button>
     <span id="copied" style="font-size:12.5px;color:var(--ok)"></span>
+    <span style="font-size:12.5px;color:var(--dim)">منعك المتصفح من تنزيل عدة ملفات؟ اسمح مرة واحدة، أو نزّلها واحداً واحداً من الجدول.</span>
   </div>
   <table id="tbl"><thead><tr><th>#</th><th>الاسم</th><th>الحجم</th><th>SHA‑256</th><th></th></tr></thead><tbody></tbody></table>
 </div>
 
 <div class="step" id="s5" hidden>
   <h2>٥ · ارفعها على الفرع</h2>
-  <p class="sub">اسحب كل الأجزاء + <code>MANIFEST.txt</code> إلى هذه الصفحة، واترك الخيار الافتراضي
-     <em>Commit directly to the <code>arena/c36750ba-vitoai</code> branch</em>، ثم اكتب لي «تم».</p>
+  <p class="sub">اختر ما تستطيع — <b>ملفاً ملفاً لا يضرّ</b>، ولا حاجة لتحديدها كلها معاً. اترك الخيار الافتراضي
+     <em>Commit directly to the <code>arena/c36750ba-vitoai</code> branch</em>، ثم اكتب لي «تم» فأُحصي أي رقم وصل وأطلب الباقي بالاسم.</p>
   <div class="row">
     <button class="go" id="openUp">فتح صفحة الرفع</button>
     <button class="ghost" id="copyCmd">نسخ أمر اللمّ</button>
@@ -149,6 +150,9 @@ let file = null, parts = [], manifest = "";
 const human = (n) => n >= 1024*MB ? (n/(1024*MB)).toFixed(2)+" GB" : (n/MB).toFixed(1)+" MB";
 const safe = (name) => name.replace(/[^\w.\-]+/g, "_").replace(/\.+$/,"").slice(0,64) || "video";
 const base = (name) => safe(name.replace(/\.[^.]+$/, ""));
+// الامتداد الأصلي يبقى في الاسم: «.part» المجردة رآها متصفح هاتفك بلا نوع فألحق بها .txt
+const extOf = (name) => { const m = name.match(/(\.[A-Za-z0-9]{2,4})$/); return m ? m[1].toLowerCase() : ".mp4"; };
+// وهذا المستودع عامّ: لفاصل في الاسم يمنع عدّ الأجزاء بالحدس، إلى أن تُحذف بعد اللمّ
 
 $("#f").addEventListener("change", async (e) => {
   const f = e.target.files[0];
@@ -208,7 +212,7 @@ $("#cut").addEventListener("click", async () => {
   if (!file || !cryptoReady()) return;
   const size = (+$("#chunk").value) * MB;
   const n = Math.ceil(file.size / size);
-  const stem = base(file.name);
+  const stem = base(file.name) + "." + Math.random().toString(36).slice(2, 6);
   parts = []; manifest = "";
   $("#bar").style.display = "block"; $("#bar").firstChild.style.width = "0%";
   $("#cut").disabled = true;
@@ -217,7 +221,7 @@ $("#cut").addEventListener("click", async () => {
   for (let i = 0; i < n; i++) {
     const blob = file.slice(i * size, Math.min((i+1) * size, file.size));
     const sha = await sha256(await blob.arrayBuffer());
-    parts.push({ i, name: stem + "." + String(i+1).padStart(4,"0") + ".part", size: blob.size, sha, blob });
+    parts.push({ i, name: stem + "." + String(i+1).padStart(4,"0") + ".part" + extOf(file.name), size: blob.size, sha, blob });
     $("#bar").firstChild.style.width = Math.round(((i+1)/n)*100) + "%";
     msg.textContent = "…جزء " + (i+1) + " من " + n;
     await new Promise(r => setTimeout(r, 0));   // لا يجمّد الواجهة
@@ -241,7 +245,7 @@ $("#cut").addEventListener("click", async () => {
     tr.querySelector("td:nth-child(2)").textContent = p.name;
     tb.appendChild(tr);
   }
-  $("#cmd").textContent = "cat " + stem + ".*.part > " + stem + ".mp4\nsha256sum " + stem + ".mp4";
+  $("#cmd").textContent = "cat " + stem + ".*.part* > " + stem + ".mp4\nsha256sum " + stem + ".mp4";
   $("#s4").hidden = false; $("#s5").hidden = false;
   msg.className = "msg ok";
   msg.textContent = n + " جزءًا جاهز في " + dt + " ثانية — لا شيء خرج من جهازك حتى الآن.";
@@ -264,7 +268,7 @@ $("#dlAll").addEventListener("click", async () => {
   for (const p of parts) { save(p.blob, p.name); await new Promise(r => setTimeout(r, 450)); }
 });
 $("#dlMan").addEventListener("click", () => {
-  if (manifest) save(new Blob([manifest], {type:"text/plain"}), base(file.name) + ".MANIFEST.txt");
+  if (manifest) save(new Blob([manifest], {type:"text/plain"}), stem + ".MANIFEST.txt");
 });
 $("#copyCmd").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("#cmd").textContent);
