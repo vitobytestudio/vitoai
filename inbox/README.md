@@ -46,3 +46,26 @@ and the base still looks like this repo (`package.json`, `src/index.ts`, `inbox/
 a scratch remote: 247 → 250 paths, three additions, zero deletions; against a one-file stub branch it
 refuses with exit 4. Above 100 MB per file, chunk — GitHub's wall is per file, and the parts folder is
 one command either way.
+
+## The surest route on a phone: `upload.html`
+
+`https://htmlpreview.github.io/?https://raw.githubusercontent.com/vitobytestudio/vitoai/arena/c36750ba-vitoai/inbox/upload.html`
+
+The page talks to `api.github.com` from the browser with a fine-grained token (repo `vitobytestudio/vitoai`,
+Contents: read+write, short expiry — revoke after delivery). It slices the file, commits each part to
+`inbox/` on the montage branch, then reads the commit back and compares the git blob SHA-1 before moving
+on, so a corrupt or missing part cannot hide. Reload resumes: parts already present with a matching blob
+hash are skipped rather than re-uploaded. A `NAME.MANIFEST.txt` lands last with size + SHA-256 + blob SHA-1
+per part.
+
+Measured ceilings, not folklore: the Contents API refused 90 MB and 48 MB bodies ("the file is too large
+to be processed"), timed out at 64 MB, and accepted 24 MB — so 24 MB is the default part size, and no route
+carries a single file above 100 MB. The whole loop was tested against the real API: three parts uploaded
+and verified, a second run skipped all three, and `git show` + `cat` reassembled the original byte-for-byte
+with an identical SHA-256.
+
+The page's pure helpers (`blobSha`, `b64`, `sha256`, naming) sit between `// [[PURE-START]]` and
+`// [[PURE-END]]` so they can be extracted and tested verbatim — they were: `blobSha` agrees with
+`git hash-object -t blob`, `sha256` with `sha256sum`, and the chunked base64 is byte-identical to the
+standard encoder (feeding 24 MB to `String.fromCharCode.apply` in one call would throw, hence the
+32 KB stepping).

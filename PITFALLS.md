@@ -359,3 +359,21 @@ Two rules came out of it, both in the script now:
   not only against a good one.
 And verify against a scratch remote (`VITO_INBOX_REPO=/tmp/remote.git`), never against the branch a
 person is waiting on.
+
+## Sandbox egress: what the API actually accepts, and how node gets there
+
+Reachability here is host-by-host, so measure before designing: `github.com` and `codeload` answer,
+`raw.`/`media.`/`objects.githubusercontent.com` and `remotion.media` do not — which is why raw footage
+must arrive as git objects on a branch, never as a release asset or an issue attachment. Two facts worth
+pinning:
+
+- `node`'s `fetch` to `api.github.com` fails with `UNABLE_TO_VERIFY_LEAF_SIGNATURE` while `curl` and `gh`
+  work: the sandbox terminates TLS with its own CA. Export `NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt`
+  and node reaches the same endpoints. A test that cannot open a socket is not a red suite — it is no suite.
+- GitHub's Contents API caps one commit's file at roughly 24 MB of real content (base64 body ≈ 32 MB):
+  48 MB and 90 MB are rejected outright, 64 MB times out. Design around that number instead of discovering
+  it mid-upload. The API *read* side is far more generous: `Accept: application/vnd.github.raw` returns
+  files up to 100 MB, and `curl` of a 16 MB part came back with a matching SHA-256.
+
+`GET /contents/<path>?ref=<branch>` returns the git blob SHA-1, which is exactly what `blobSha(bytes)`
+computes in the browser — so "did my bytes arrive?" is one cheap comparison, no download needed.
