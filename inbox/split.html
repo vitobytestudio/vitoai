@@ -66,7 +66,7 @@
 </header>
 <p class="lead">
   رفع الملفات من واجهة GitHub محدود بـ 25 ميغابايت للملف. هذه الصفحة تقسّم ملفك إلى أجزاء بايت‑بايت،
-  ترفعها — كلها معاً أو ملفاً ملفاً، كما يسهلك — فألمّها وأشغّل عليها المونتاج. الملف الأصلي لا يُمسّ: لا transcoding،
+  ترفعها جزءاً جزءاً فألمّها وأشغّل عليها المونتاج — وزرّ «كم وصل؟» يعدّ معك من الفرع نفسه، بلا صكّ. الملف الأصلي لا يُمسّ: لا transcoding،
   لا تغيير دقة، لا إعادة ترميز — تقطيع بايتات فقط.
 </p>
 
@@ -129,6 +129,13 @@
     <button class="go" id="openUp">فتح صفحة الرفع</button>
     <button class="ghost" id="copyCmd">نسخ أمر اللمّ</button>
   </div>
+  <div class="row" style="margin-top:10px">
+    <button class="go" id="check">كم وصل؟</button>
+    <span id="checkMsg" style="font-size:13px"></span>
+  </div>
+  <p class="fine">ارفع <b>جزءاً واحداً في كل رفعة</b>، أو اثنين لا أحد عشر. صفحة GitHub تجعل ما ترفعه
+     commit واحداً: رفعة بمئتين وأربعين ميغابايت تُرفض بعد «Processing» ولا يثبت منها شيء — وهذا ما
+     جرى للتوّ، لم يصل منك ولا جزء. لا ضياع جزئي إذن، ولا خسارة في إعادة المحاولة بملف واحد.</p>
   <pre id="cmd"></pre>
   <div class="note">
     الأجزاء ليست «فيديو مضغوط»؛ هي مقاطع بايتات من ملفك، تُلمّ بـ <code>cat</code> فترجع نسخة مطابقة
@@ -145,6 +152,7 @@
 const $ = (s) => document.querySelector(s);
 const MB = 1024 * 1024;
 const UP = "https://github.com/vitobytestudio/vitoai/upload/arena/c36750ba-vitoai/inbox/";
+const API = "https://api.github.com/repos/vitobytestudio/vitoai/git/trees/arena%2Fc36750ba-vitoai?recursive=1";
 let file = null, parts = [], manifest = "";
 
 const human = (n) => n >= 1024*MB ? (n/(1024*MB)).toFixed(2)+" GB" : (n/MB).toFixed(1)+" MB";
@@ -276,6 +284,36 @@ $("#copyCmd").addEventListener("click", async () => {
   catch (_) { $("#copied").textContent = "انسخه يدويًا من المربع"; }
 });
 $("#openUp").addEventListener("click", () => window.open(UP, "_blank", "noopener"));
+
+// عدّاد علني: المستودع عامّ، فقرأنا قائمة شجرة الفرع بلا صكّ ولا تسجيل دخول.
+async function remoteInbox(){
+  const r = await fetch(API, { headers: { Accept: "application/vnd.github+json" } });
+  if (!r.ok) throw new Error("HTTP " + r.status + (r.status === 403 ? " — سقف القراءة العلنية (60 طلب/ساعة): انتظر دقيقة" : " — تعذّرت القراءة من GitHub"));
+  const j = await r.json();
+  const map = Object.create(null);
+  for (const t of (j.tree || [])) if (t.type === "blob" && t.path.startsWith("inbox/")) map[t.path.slice(6)] = t.size;
+  return map;
+}
+$("#check").addEventListener("click", async () => {
+  const m = $("#checkMsg"); m.className = ""; m.textContent = "… أقرأ الفرع";
+  if (!parts.length) { m.style.color = "var(--bad)"; m.textContent = "اقطع أولاً في الخطوة ٣ حتى أعرف أسماء أجزائك"; return; }
+  let remote;
+  try { remote = await remoteInbox(); }
+  catch (e) { m.style.color = "var(--bad)"; m.textContent = "✗ " + e.message; return; }
+  m.style.color = "";
+  const rows = $("#tbl").tBodies[0].rows;
+  let have = 0; const missing = [];
+  parts.forEach((p, i) => {
+    const key = [p.name, p.name + ".txt", p.name.replace(/\.[^.]+$/, "")].find(k => k in remote);
+    const tr = rows[i], cell = tr && tr.children[4];
+    if (!key) { missing.push(String(p.i + 1).padStart(4, "0")); if (cell) cell.textContent = "لم يصل"; }
+    else if (remote[key] !== p.size) { missing.push(String(p.i + 1).padStart(4, "0") + " (بدا مقطوعاً)"); if (cell) cell.textContent = "⚠ حجم غير مطابق"; }
+    else { have++; if (cell) cell.textContent = "✓ في الفرع"; }
+  });
+  m.textContent = have === parts.length
+    ? "✓ كل الأجزاء " + parts.length + " في الفرع بأحجامها المطابقة — اكتب «تم»."
+    : "وصل " + have + " من " + parts.length + " · الناقص: " + missing.slice(0, 10).join("، ") + (missing.length > 10 ? "…" : "");
+});
 </script>
 </body>
 </html>
