@@ -1,7 +1,7 @@
 /**
  * «الطابق الأخير» — a horror beat, generated end to end.
  *
- * The picture is a Cycles render (studio/blender/scene_horror.py): a bare bulb on a
+ * The picture is a Cycles render, baked from a now-removed 3D rig: a bare bulb on a
  * cord, a corridor, one doorway leaking cold light, dust in the beam, a door that gives
  * way, and something that only exists while the light is off. This file is the *film*
  * around that plate: the fade up, the push that keeps creeping so no frame is dead, the

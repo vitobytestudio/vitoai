@@ -1,6 +1,6 @@
 /**
  * «الطابق الأخير» — THE LAST FLOOR. A 30 s launch trailer for a horror game on Roblox,
- * built as a toy film: blocky generated figures (studio/blender/scene_toy.py) inside a
+ * built as a toy film: blocky generated figures rendered offline inside a
  * screen that behaves like the game itself.
  *
  * The structure is the interface. A trailer usually cuts between "cinematic" and "logo";

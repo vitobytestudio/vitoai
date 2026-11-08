@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# The horror beat, end to end: plate -> conform -> edit -> score -> master -> contact sheet.
+# The horror beat, end to end: edit -> score -> master -> contact sheet.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck disable=SC1091
 source .toolenv
 OUT=deliverables/horror-01-1080x1920.mp4
 
-bash studio/horror_plate.sh
+# the plate is pre-rendered in public/plates/ (the 3D rig that produced it no longer lives here)
+[ -f public/plates/horror-plate.mp4 ] || { echo "missing public/plates/horror-plate.mp4" >&2; exit 3; }
 
 npx remotion render src/index.ts Horror01 /tmp/horror-silent.mp4 --concurrency=2 --log=error
 

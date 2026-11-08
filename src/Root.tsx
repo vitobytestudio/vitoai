@@ -135,7 +135,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="Naksab01" component={Naksab01} durationInFrames={NAKSAB_DURATION} fps={30} width={1080} height={1920} />
     <Composition id="Naksab02" component={Naksab02} durationInFrames={NAKSAB2_DURATION} fps={30} width={1080} height={1920} />
     <Composition id="Chase" component={Chase} durationInFrames={CHASE_DURATION} fps={30} width={1080} height={1920} />
-    {/* a generated horror beat — Cycles plate, 30 fps master */}
+    {/* a generated horror beat — pre-rendered plate, 30 fps master */}
     <Composition id="Horror01" component={Horror01} durationInFrames={HORROR_DURATION} fps={30} width={1080} height={1920} />
     {/* THE LAST FLOOR — 30 s launch trailer for a Roblox horror game: Cycles toy plates inside the game's own screen */}
     <Composition id="LastFloor" component={LastFloor} durationInFrames={LASTFLOOR_DURATION} fps={30} width={1080} height={1920} />

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # «الطابق الأخير» — the whole film, in one command.
 #
-#   Cycles frames -> conformed plates -> edit -> score -> master -> deliverable + review sheet
+#   pre-rendered plates -> edit -> score -> master -> deliverable + review sheet
 #
 # The loudness is already set inside the score (RMS ≈ −15, one peak at −4 that only the jump
 # is allowed to have), so this mux just limits; no loudnorm. If the numbers below drift more
@@ -13,7 +13,8 @@ source .toolenv
 OUT=${OUT:-deliverables/last-floor-1080x1920.mp4}
 mkdir -p deliverables
 
-bash studio/lastfloor_plate.sh
+# plates ship in public/plates/ (lf-*.jpg); the 3D rig that rendered them is gone from this repo
+ls public/plates/lf-*.jpg >/dev/null 2>&1 || { echo "missing public/plates/lf-*.jpg" >&2; exit 3; }
 
 npx remotion render src/index.ts LastFloor /tmp/lastfloor-silent.mp4 --concurrency=2 --log=error
 
