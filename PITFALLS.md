@@ -340,3 +340,22 @@ baked-in ffmpeg crossfade cannot. ffmpeg keeps four jobs — probe, conform, mux
 `setup.sh` now proves at install time that the build really has `format loudnorm tile scale fps
 alimiter`, the only filters our scripts call. Measure a toolchain by running it; never trust what
 an earlier session claimed was installed.
+
+## A commit from an empty index is a tree with one file
+
+`git clone --filter=blob:none --no-checkout` gives you a repo whose HEAD is real and whose **index is
+empty**. `git add` one file and `git commit` and you get a commit whose tree contains *only that
+file* — a valid, well-formed commit that deletes the entire project. My `inbox/push.sh` did exactly
+that on the working branch: 246 tracked paths vanished in one green run, and the operator's freshly
+uploaded 16 MB part went with them. Reverted in `b764c54`; nothing was lost but the trust.
+
+Two rules came out of it, both in the script now:
+- materialise the tree before editing it (`sparse-checkout` + `git checkout`), so the index carries
+  every path and our commit can only add;
+- **anchor-check the base**: `git cat-file -e HEAD:package.json`, `HEAD:src/index.ts`,
+  `HEAD:inbox/README.md` — refuse to build on a branch that does not look like this repo. A guard
+  that only checks "deletions since HEAD~1" is useless when the *base* is already broken: that is how
+  the first version passed while destroying things. Test a guard against a deliberately broken base,
+  not only against a good one.
+And verify against a scratch remote (`VITO_INBOX_REPO=/tmp/remote.git`), never against the branch a
+person is waiting on.
