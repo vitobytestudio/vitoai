@@ -260,6 +260,7 @@ def self_check(args) -> int:
             "signed out or image creation may not be available in your location yet.")
     check("wall: a prose apology from a logged-out assistant is a session problem, not ok",
           drive.says_wall(real) and not drive.is_echo(real, "one line of type on black: echo gate"), real[:64])
+    Path("/tmp/tools-selfcheck").mkdir(parents=True, exist_ok=True)
     check("wall: a plain 'hard time' refusal is not wall wording, and must be caught another way",
           not drive.says_wall("I'm having a hard time fulfilling your request. Can I help you with something else instead?"))
     check("wall: 'are you signed in?' and a regional lockout are both session talk",
@@ -364,7 +365,6 @@ def self_check(args) -> int:
 
     pa = _PictureAdapter(_FakeTab(), cfg)
     pa._prompt = "one line of type on black"
-    Path("/tmp/tools-selfcheck").mkdir(parents=True, exist_ok=True)
     Path("/tmp/tools-selfcheck/x.png").write_bytes(b"PNG1")
     try:
         out = pa.run("one line of type on black")
