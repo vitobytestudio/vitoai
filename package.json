@@ -1,0 +1,39 @@
+{
+  "name": "vitoai-motion-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Autonomous programmatic 3D motion-graphics pipeline (Remotion)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts MainComposition out/master_video.mp4",
+    "audio": "python3 scripts/make_audio.py",
+    "captions": "python3 scripts/export_captions.py",
+    "check": "python3 scripts/check_glyphs.py && tsc --noEmit",
+    "build": "bash build_video.sh",
+    "serve": "node out/serve.mjs"
+  },
+  "dependencies": {
+    "@fontsource/cairo": "^5.3.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/sora": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "@fontsource/tajawal": "^5.3.0",
+    "@remotion/captions": "^4.0.539",
+    "@remotion/cli": "^4.0.539",
+    "@remotion/media-utils": "^4.0.539",
+    "@remotion/motion-blur": "^4.0.539",
+    "@remotion/transitions": "^4.0.539",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.539",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@sparticuz/chromium": "^138.0.2"
+  }
+}

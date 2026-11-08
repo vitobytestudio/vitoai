@@ -1,0 +1,144 @@
+{
+  "source": "clip.mp4",
+  "measured": {
+    "durationSec": 8.04,
+    "fps": 24,
+    "size": [
+      1280,
+      720
+    ],
+    "aspect": 1.778,
+    "cuts": [
+      0,
+      1.958,
+      3.5,
+      5.042,
+      6.417,
+      8.04
+    ],
+    "avgShotSec": 1.61,
+    "motionAvg": 0.022,
+    "talkDensity": 0.68,
+    "speech": [
+      {
+        "start": 0.76,
+        "end": 1.8
+      },
+      {
+        "start": 2.08,
+        "end": 3.24
+      },
+      {
+        "start": 3.64,
+        "end": 4.36
+      },
+      {
+        "start": 4.56,
+        "end": 4.84
+      },
+      {
+        "start": 5.12,
+        "end": 5.6
+      },
+      {
+        "start": 5.68,
+        "end": 6.24
+      },
+      {
+        "start": 6.52,
+        "end": 7.72
+      }
+    ]
+  },
+  "palette": {
+    "source": "clip.mp4",
+    "durationSec": 8.04,
+    "fps": 24,
+    "mood": {
+      "temperature": "cool",
+      "exposure": "dark",
+      "contrast": 0.665,
+      "saturation": 0.304
+    },
+    "ink": "#06090C",
+    "ink2": "#0D1419",
+    "paper": "#F6F6F7",
+    "accent": "#62A8DA",
+    "accent2": "#DAA681",
+    "ramp": [
+      "#173245",
+      "#2B5E82",
+      "#478FC2",
+      "#94BEDB",
+      "#E0ECF5"
+    ],
+    "rules": {
+      "surface": "paper-on-ink",
+      "accentUse": "accent reads cold: keep it small and rare"
+    }
+  },
+  "decision": {
+    "grammar": "portrait",
+    "ornament": 2,
+    "frame": {
+      "mode": "ambient-letterbox",
+      "note": "wide source in a tall canvas: blurred self as the bed, sharp picture at native ratio"
+    },
+    "type": {
+      "arabic": 64,
+      "latin": 76,
+      "label": 13,
+      "tracking": "wide"
+    },
+    "why": [
+      "speech covers 67% of the clip and the average shot is 1.6s — let the person carry it"
+    ],
+    "beats": [
+      {
+        "index": 0,
+        "start": 0,
+        "seconds": 1.958,
+        "motion": 0.013,
+        "lum": 0.43,
+        "ornaments": 2,
+        "note": "long hold: give the type room to arrive slowly"
+      },
+      {
+        "index": 1,
+        "start": 1.958,
+        "seconds": 1.542,
+        "motion": 0.037,
+        "lum": 0.351,
+        "ornaments": 2,
+        "note": "short beat: a single word"
+      },
+      {
+        "index": 2,
+        "start": 3.5,
+        "seconds": 1.542,
+        "motion": 0.005,
+        "lum": 0.198,
+        "ornaments": 2,
+        "note": "short beat: a single word"
+      },
+      {
+        "index": 3,
+        "start": 5.042,
+        "seconds": 1.375,
+        "motion": 0.021,
+        "lum": 0.444,
+        "ornaments": 2,
+        "note": "short beat: a single word"
+      },
+      {
+        "index": 4,
+        "start": 6.417,
+        "seconds": 1.623,
+        "motion": 0.033,
+        "lum": 0.47,
+        "ornaments": 2,
+        "note": "long hold: give the type room to arrive slowly"
+      }
+    ]
+  }
+}
