@@ -19,7 +19,7 @@ GitHub (`objects.githubusercontent.com`) — أي أن أوزان نماذج ا�
     python3 studio/comp.py --self-test            # يثبت أنّ الآلة تعمل بلا صورة لك
 """
 from __future__ import annotations
-import argparse, json, os, resource, sys, time
+import argparse, json, os, re, resource, sys, time
 
 import cv2
 import numpy as np
@@ -249,10 +249,26 @@ def main() -> int:
     ap.add_argument("--feather", type=int, default=3, help="نصف قطر تنعيم الحافة")
     ap.add_argument("--shadow", type=float, default=0.45, help="قوة ظلّ الارتكاز")
     ap.add_argument("--self-test", action="store_true", help="اثبت الآلة على مشهد مُركَّب")
+    ap.add_argument("--video", help="تمريرة على فيديو: قناع + خلفية + بُعد (يكتب look.mp4 في --out)")
+    ap.add_argument("--mode", default="defocus", choices=["defocus", "plate"], help="ضبابية عمق أم لوحة خلفية")
+    ap.add_argument("--fps", type=float, default=30.0)
+    ap.add_argument("--blur", type=float, default=22.0, help="قطع تنعيم الخلفية (بكسل، على نصف دقة)")
+    ap.add_argument("--bgdrop", type=float, default=0.34, help="إظلام الخلفية 0..1")
+    ap.add_argument("--bgsat", type=float, default=0.70, help="تشبّع الخلفية (أقل = أهدأ)")
+    ap.add_argument("--cool", type=float, default=0.14, help="برودة الخلفية ودفء الشخص")
+    ap.add_argument("--punch", type=float, default=0.35, help="قطع المعنى للشخص")
+    ap.add_argument("--edge", type=float, default=0.34, help="تعتيم الشريط حول القناع (ضدّ الهالة الفاتحة)")
+    ap.add_argument("--ema", type=float, default=0.18, help="سقف تغيّر القناع بين اللقطات (ضدّ الرفرفة بلا تأخّر)")
+    ap.add_argument("--probe", type=int, default=0, help="اشتغل N إطاراً فقط واحفظ ورقة مقارنة")
     a = ap.parse_args()
 
     if a.self_test:
         return self_test(a.out)
+    if a.video:
+        rep = look_video(a.video, a.out, a.mode, a.bg, a.fps, a.blur, a.bgdrop, a.bgsat, a.cool,
+                         a.punch, a.ema, a.feather, a.probe or None, a.edge)
+        print(json.dumps(rep, ensure_ascii=False, indent=1))
+        return 0 if rep["frames"] > 0 else 1
     if not a.subject:
         ap.error("أعطني --subject، أو جرّب --self-test")
 
@@ -291,6 +307,150 @@ def main() -> int:
                       "files": [os.path.join(a.out, f) for f in ("matte.png", "comp.jpg", "sheet.jpg")]},
                      ensure_ascii=False, indent=1))
     return 0
+
+
+
+
+# ---------------------------------------------------------------- فيديو (تمريرة واحدة، قناعٌ مُنعَّم زمنياً)
+class Matter:
+    """سياق واحد للشبكة بدل فتحِه لكل إطار: 900 إطار تُقرأ الفرق في الدقيقة."""
+
+    def __init__(self, refine: int = 1):
+        try:
+            import mediapipe as mp
+        except ImportError:
+            raise SystemExit("✗ mediapipe غير مثبّت:  bash setup.sh --ai")
+        self._seg = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=refine)
+
+    def alpha(self, bgr: np.ndarray, small: int = 2) -> np.ndarray:
+        """قناع بدقة مصغّرة (1/small) — العمليات على حافة رخيصة ولا أحد يرى 256 بكسلاً."""
+        h, w = bgr.shape[:2]
+        sw, sh = max(8, w // small), max(8, h // small)
+        rgb = cv2.cvtColor(cv2.resize(bgr, (sw, sh), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB)
+        m = np.asarray(self._seg.process(rgb).segmentation_mask, np.float32)
+        m = np.clip(cv2.resize(m, (w, h), interpolation=cv2.INTER_LINEAR), 0, 1)
+        return m
+
+    def close(self):
+        self._seg.close()
+
+
+def grade_subject(img: np.ndarray, punch: float, warm: float = 0.0) -> np.ndarray:
+    """بُعد للشخص فقط. منحنوب جربي سابق (sin على L) كان يَسحق الوجوه إلى 0.17 من نصف
+    الدرجة، فرأيتُها بعيني على صورة حقيقية: الوجه أغمق والثوب فقد نسيجه. التصحيح خطٌّ
+    حول المنتصف مع رفعٍ صغير — قطعٌ أقل ولمعان أكثر، وهو ما يفعله مصحّح لوني محترم."""
+    if punch <= 0:
+        return img
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
+    L = lab[..., 0] / 255.0
+    L = np.clip((L - 0.42) * (1.0 + 0.16 * punch) + 0.42 + 0.030 * punch, 0, 1)
+    lab[..., 0] = L * 255.0
+    g = lab[..., 1:3].mean(axis=2, keepdims=True)
+    lab[..., 1:3] = np.clip(g + (lab[..., 1:3] - g) * (1.0 + 0.14 * punch), 0, 255)
+    if warm:
+        lab[..., 1] = np.clip(lab[..., 1] + 2.0 * warm, 0, 255)
+        lab[..., 2] = np.clip(lab[..., 2] + 2.6 * warm, 0, 255)
+    return cv2.cvtColor(np.clip(lab, 0, 255).astype(np.uint8), cv2.COLOR_Lab2BGR)
+
+
+def dim_bg(img: np.ndarray, drop: float, sat: float, cool: float, h: int = 0, w: int = 0) -> np.ndarray:
+    """إظلام الخلفية وتبريدها — **بلا تنعيم**: التنعيم خطوةٌ منفصلة تُوزَن بثقة القناع."""
+    a = img.astype(np.float32)
+    g = a.mean(axis=2, keepdims=True)
+    a = g + (a - g) * sat
+    a[..., 0] *= (1.0 + cool)
+    a[..., 2] *= (1.0 - cool * 0.6)
+    H, W = (h, w) if h and w else a.shape[:2]
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    v = 1.0 - 0.30 * (((yy - H * 0.46) / H) ** 2 + ((xx - W * 0.5) / W) ** 2 * 1.35)
+    a *= np.clip(v, 0.55, 1.0)[..., None] * (1.0 - drop)
+    return np.clip(a, 0, 255).astype(np.uint8)
+
+
+def blur_of(img: np.ndarray, blur: float) -> np.ndarray:
+    """تنعيم على نصف الدقة: نفس العين بنصف الكلفة، ثم رجوعٌ خطّي."""
+    h, w = img.shape[:2]
+    sm = cv2.resize(img, (max(8, w // 2), max(8, h // 2)), interpolation=cv2.INTER_AREA)
+    sm = cv2.GaussianBlur(sm, (0, 0), max(1.0, blur / 2.0))
+    return cv2.resize(sm, (w, h), interpolation=cv2.INTER_LINEAR)
+
+
+def look_video(src: str, outdir: str, mode: str, bg: str | None, fps: float, blur: float,
+               drop: float, sat: float, cool: float, punch: float, ema: float, feather_r: int,
+               only_frame: int | None, edge_shade: float = 0.34) -> dict:
+    """تمريرة واحدة: قناع → تنعيم زمني → خلفية (لوحية أو ضبابية) → بُعد للشخص. بلا ffmpeg-Python سحر."""
+    import subprocess
+    os.makedirs(outdir, exist_ok=True)
+    probe = subprocess.run(["bash", "-lc", f'source {os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}/.toolenv 2>/dev/null; echo "$FFMPEG"'],
+                           capture_output=True, text=True).stdout.strip()
+    ff = probe or os.environ.get("FFMPEG") or "ffmpeg"
+    info = subprocess.run([ff, "-hide_banner", "-i", src], capture_output=True, text=True).stderr
+    m = re.search(r"(\d{2,4})x(\d{3,4})", info)
+    W, H = (int(m.group(1)), int(m.group(2))) if m else (1080, 1920)
+    dec = subprocess.Popen([ff, "-v", "error", "-i", src, "-vf", f"fps={fps},scale={W}:{H}:flags=lanczos,setsar=1",
+                            "-pix_fmt", "bgr24", "-f", "rawvideo", "-"], stdout=subprocess.PIPE, bufsize=W * H * 3)
+    enc_path = os.path.join(outdir, "look.mp4")
+    enc = subprocess.Popen([ff, "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{W}x{H}",
+                            "-r", str(fps), "-i", "-", "-c:v", "libx264", "-preset", "veryfast", "-crf", "15",
+                            "-pix_fmt", "yuv420p", enc_path], stdin=subprocess.PIPE)
+    mat = Matter()
+    plate = fit(load(bg), (H, W)) if (mode == "plate" and bg) else None
+    prev, n, t0 = None, 0, time.time()
+    stride = W * H * 3
+    while True:
+        buf = dec.stdout.read(stride)
+        if len(buf) < stride:
+            break
+        fr = np.frombuffer(buf, np.uint8).reshape(H, W, 3).copy()
+        a = mat.alpha(fr)
+        # تنعيمُ القناع بمتوسط أُسّي كان يترك يدَه تتأخر ثلاث لقطات فتُطمس مع الخلفية
+        # (رأيتُها بعيني على إطار حقيقي عند 70). البديل: سقفُ تغيّر لكل لقطة — الرفرفة
+        # تُقصّ لأنّها صغيرة، والحركة الحقيقية تُتبع لأنّها كبيرة.
+        a = prev + np.clip(a - prev, -ema, ema) if prev is not None else a
+        prev = a
+        a = feather(clean(a, 3), feather_r)
+        if plate is None:
+            dim = dim_bg(fr, drop, sat, cool)
+            # الخطأ الأول الذي وقع: خلطُ `dim` مع الإطار الحادّ قبل التركيب أبعد الأثرَ كله.
+            # الصحيح: الخلفية تُظلَّل دائماً، والتنعيم وحده يُمنَح حيث القناع واثق —
+            # فلا لطخةَ على يدٍ تتحرك، ولا حافةَ تُكافئ بتمديد الغموض.
+            unc = np.clip(1.0 - np.abs(2.0 * a - 1.0), 0, 1) ** 1.3
+            unc = cv2.GaussianBlur(unc, (0, 0), 1.6)[..., None]
+            # وزنُ الغموض ذروتُهُ عند الحافة (a≈0.5) وصفرُه في العمق — وهو هناك بالضبط
+            # حيث يُراد التنعيم. كان الخلط معكوساً فرأيتُ الخلفية حادّة بلا عمق؛ نُقلَب.
+            bg = blur_of(dim, blur) * (1.0 - unc) + dim * unc
+            # ظلّ الحافة: ما رآه الإنسان لا ما يقوله التقرير — في اللقطة الأولى بدت
+            # حلقةٌ فاتحة حول الرأس والكتف (جدارٌ مضاءٌ ينجو من التظليل في منطقة
+            # الشكّ). الشريطُ حول القناع يُعتَم عمداً، فيقرأ كانطباق عدسة لا كأثر قصّ.
+            if edge_shade > 0:
+                u8 = (a * 255).astype(np.uint8)
+                k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+                band = cv2.dilate(u8, k).astype(np.float32) - cv2.erode(u8, k).astype(np.float32)
+                band = cv2.GaussianBlur((np.clip(band, 0, 255)).astype(np.uint8), (0, 0), 3.0).astype(np.float32) / 255.0
+                bg = (bg.astype(np.float32) * (1.0 - edge_shade * band[..., None])).astype(np.uint8)
+            out = (bg * (1 - a[..., None]) + grade_subject(fr, punch, cool * 0.5) * a[..., None]).astype(np.uint8)
+        else:
+            out = (plate * (1 - a[..., None]) + lab_match(fr, plate, 0.65) * a[..., None]).astype(np.uint8)
+            out = grade_subject(out, punch * 0.6)
+        enc.stdin.write(out.tobytes())
+        n += 1
+        if only_frame and n == only_frame:
+            save(os.path.join(outdir, "probe.jpg"), out)
+            save(os.path.join(outdir, "probe_src.jpg"), fr)
+            save(os.path.join(outdir, "probe_sheet.jpg"), sheet([fr, out], ["source", "look"]))
+        if n % 120 == 0:
+            print(f"    {n} إطار · {(time.time()-t0)/n*1000:.0f} ms/إطار", flush=True)
+        if only_frame and n >= only_frame:
+            break
+    dec.stdout.close(); dec.wait()
+    enc.stdin.close(); enc.wait()
+    try:
+        mat.close()
+    except Exception:
+        pass
+    return {"frames": n, "seconds": round(time.time() - t0, 1), "ms_per_frame": round((time.time() - t0) / max(1, n) * 1000, 1),
+            "size": [W, H], "mode": mode if plate is not None else "defocus", "out": enc_path,
+            "peak_rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)}
 
 
 if __name__ == "__main__":
