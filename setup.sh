@@ -50,6 +50,12 @@ FFMPEG_BIN="$ROOT/node_modules/@ffmpeg-installer/linux-x64/ffmpeg"
 if [[ -x "$FFMPEG_BIN" ]]; then
   chmod +x "$FFMPEG_BIN"
   ok "$("$FFMPEG_BIN" -version 2>/dev/null | head -1 | cut -c1-40)"
+  # measured, not assumed: this static build is years old and can differ after a reset. These are
+  # the only filters the pipeline calls — cuts and dissolves are Remotion's job, never ffmpeg's.
+  for f in format loudnorm tile scale fps alimiter; do
+    "$FFMPEG_BIN" -hide_banner -filters 2>/dev/null | grep -q " $f " \
+      || die "this ffmpeg build has no '$f' — the review sheet and the master both need it"
+  done
 else
   warn "ffmpeg unavailable — mastering/audio steps will fail"
 fi

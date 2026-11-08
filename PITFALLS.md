@@ -329,3 +329,14 @@ it only removes it from future serving.
 - **Never mask display lines with `overflow: hidden` + a fixed height** to fake a slide-in: Arabic ascenders and the dot of a final `ة` get sliced. Animate `translateY` + opacity on the line itself.
 - **A mark whose parent is a `nowrap` RTL block must be a sibling of the copy, not inside it.** A 112 px wordmark inside a 928 px Arabic column pulls the whole block: give the constellation SVG and the type block separate layers.
 - **Drawn connection lines need something to converge *into*.** Fourteen rays meeting at an empty point read as a starburst; add the glow ellipse **and** let the lines fade once the mark lands.
+
+## Transitions belong to Remotion, not to the shell
+
+`ffmpeg` pinned here is a 2018 static build with **no `xfade`** — a one-off check of mine printed
+"present" against a leftover binary and lied, and an ad-hoc conform command then failed. The house
+rule already avoids the problem: cuts, dissolves and wipes are `<TransitionSeries>` / `Sequence`
+opacity work inside the composition, because a transition authored in code can be re-rendered and a
+baked-in ffmpeg crossfade cannot. ffmpeg keeps four jobs — probe, conform, mux, measure — and
+`setup.sh` now proves at install time that the build really has `format loudnorm tile scale fps
+alimiter`, the only filters our scripts call. Measure a toolchain by running it; never trust what
+an earlier session claimed was installed.
