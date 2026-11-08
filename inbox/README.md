@@ -1,5 +1,21 @@
 # inbox — raw footage waiting to be cut
 
+## الطريق الأول الآن: Drive (الأولوية له، وكل شيءٍ بعده احتياطي)
+
+`google_drive` مربوط بهذه الجلسة، فصار Drive أنبوباً حقيقياً في الاتجاهين: دخوله عندي وخروجه إليك،
+بلا توكن، بلا صفحة، بلا أمرٍ في الطرفية.
+
+- **دخول:** ضَع الملف في مجلد `vitoai-drop/` (أو في أي مكانٍ في الحساب — الاسم يكفي للبحث).
+  أسحبه بنفسي بـ`download_file` فينزل في `google_drive/` بأعلى المستودع، وهو مُستثنى من git.
+- **خروج:** النسخة النهائية تذهب إلى `vitoai-out/` بنفس الأداة؛ لا Release ولا commit لوسائط.
+- **السقف لكل ملف، لا لليوم:** 100 MiB ‏(104,857,600 بايت) — ما فوقها ترفضه المنصّة قبل أن يمس القرص.
+  مُقاس على هذا الحساب لا مُستنتج: ثنائيّ 4 MiB و96 MiB ومقطع mp4 ‏3 MiB رجعت كلها بـmd5 مطابق،
+  وفكّ ترميز الـmp4 بعد الرحلة كان سليماً.
+- **سلامة مجانية:** `get_file` يعيد `md5Checksum` الخاص بـDrive؛ أقارنه بـ`md5sum` بعد السحب، فأي
+  نصف ملفٍ ناقض يفضح نفسه قبل أن تضيع دقيقة render واحدة.
+
+## ثم بعد ذلك: رفع الملفات على GitHub (الطريق الاحتياطي)
+
 Drop files here from the GitHub web UI: <https://github.com/vitobytestudio/vitoai/upload/arena/c36750ba-vitoai/inbox/>
 
 Rules that keep this folder from becoming a landfill:

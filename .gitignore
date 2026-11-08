@@ -35,3 +35,5 @@ gemini_cookies.json
 *.cookies.txt
 cookies.txt
 tools/cookies/
+# files the google-drive connector lands here (up to 100MiB each): source, never a deliverable
+google_drive/
