@@ -37,5 +37,3 @@ gemini_cookies.json
 cookies.txt
 tools/cookies/
 
-# the git bridge's disposable worktree and per-task scratch
-.vito-bridge/
