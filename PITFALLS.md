@@ -394,3 +394,24 @@ computes in the browser — so "did my bytes arrive?" is one cheap comparison, n
   none", while pip with no override succeeds using the system store. npm is the one that needs
   `NODE_EXTRA_CA_CERTS`. Same box, same proxy, different rule per tool — so test the install command
   itself, never assume a fix transfers.
+
+## Google Drive is a pipe, not just a previewer — with one number that decides everything
+
+`google_drive` is wired into the session, and it carries **real bytes into the workspace**: a file
+downloaded through the connector lands at `<repo>/google_drive/<name>`, byte-exact (4 MiB and 96 MiB
+binaries both returned with an identical md5; a 3 MiB mp4 survived the trip and decoded). That makes
+it the shortest road for media — no token, no terminal, no chunk page.
+
+The number is **104,857,600 bytes (100 MiB) per file**. Above it the platform refuses *before* any
+byte moves, so nothing half-arrives. That single ceiling decides the export spec: a phone clip at
+20 Mb/s fits in one file for ~40 s, and needs 3 files at its full length.
+
+Two things that bite:
+
+- **`get_file` is the free integrity check.** Its `md5Checksum` is Drive's own hash of the stored
+  bytes; compare it against `md5sum` after the pull and a truncated upload announces itself instead of
+  surfacing as a corrupt frame 40 seconds into a render.
+- **This ffmpeg has no sibling `ffprobe`.** `@ffmpeg-installer` ships one binary, and `.toolenv`
+  exports `FFMPEG` only — so `"$FFPROBE"` expands to nothing and bash reports `: command not found`
+  *after* a successful encode, which reads like a broken clip. Probe with
+  `"$FFMPEG" -i file` and read the banner, or trust the frame you decoded.
