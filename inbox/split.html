@@ -87,13 +87,14 @@
 
 <div class="step" id="s2" hidden>
   <h2>٢ · حجم الجزء الواحد</h2>
-  <p class="sub">٢٤ ميغابايت يعطي أقل عدد ملفات ويبقى تحت سقف الـ 25 الذي ترفضه صفحة الرفع.
-     اتصالك بطيئاً أو انقطعت رفعة؟ ٨ ميغابايت أخطر أقل، وعددُ الملفات لا يهمني.</p>
+  <p class="sub">الحجم هنا **عشري** (مليون بايت) لأن صفحة GitHub تحسب السقف بالعشرة: 25,000,000 بايت للملف.
+     «٢٤ ميغابايت» بوحدة 1024 تساوي 25,165,824 بايت — أي فوق السقف بمئة وخمسة وستين ألف بايت، فتُرفض
+     الرفعة ويُنشَأ commit **فارغ** بلا رسالة. ٢٠ هي الاختيار الآمن، وأي رقم تختاره يُخفَّض تلقائياً إن جاوز.</p>
   <div class="row">
     <select id="chunk">
-      <option value="8">8 MB — أبطأ اتصال / أكثر أماناً</option>
-      <option value="16">16 MB — اتصال أبطأ</option>
-      <option value="24" selected>24 MB — أقل عدد (الموصى به)</option>
+      <option value="12">12 MB — اتصال ضعيف</option>
+      <option value="20" selected>20 MB — الموصى به (أمان تحت السقف)</option>
+      <option value="24">24 MB — أقصى ما يسمح به GitHub</option>
     </select>
     <div style="color:var(--dim);font-size:13.5px" id="plan">—</div>
   </div>
@@ -150,12 +151,13 @@
 <script>
 "use strict";
 const $ = (s) => document.querySelector(s);
-const MB = 1024 * 1024;
+const MB = 1000 * 1000;              // ميغابايت بعشريّة GitHub: سقفه 25,000,000 بايت لا 25 MiB
+const MAXPART = 24 * 1000 * 1000;    // سقفي أنا: أقلّ من سقفه، فلا تُرفض رفعةٌ بلا رسالة
 const UP = "https://github.com/vitobytestudio/vitoai/upload/arena/c36750ba-vitoai/inbox/";
 const API = "https://api.github.com/repos/vitobytestudio/vitoai/git/trees/arena%2Fc36750ba-vitoai?recursive=1";
 let file = null, parts = [], manifest = "";
 
-const human = (n) => n >= 1024*MB ? (n/(1024*MB)).toFixed(2)+" GB" : (n/MB).toFixed(1)+" MB";
+const human = (n) => n >= 1000*MB ? (n/(1000*MB)).toFixed(2)+" GB" : (n/MB).toFixed(1)+" MB";
 const safe = (name) => name.replace(/[^\w.\-]+/g, "_").replace(/\.+$/,"").slice(0,64) || "video";
 const base = (name) => safe(name.replace(/\.[^.]+$/, ""));
 // الامتداد الأصلي يبقى في الاسم: «.part» المجردة رآها متصفح هاتفك بلا نوع فألحق بها .txt
@@ -191,13 +193,18 @@ $("#f").addEventListener("change", async (e) => {
   } catch (_) { $("#mDur").textContent = "غير مقروء"; }
 });
 
+function partSize(){
+  return Math.min((+$("#chunk").value) * MB, MAXPART);   // لا نرسل ما يُرفض؛ نُرسل ما يقبله GitHub
+}
 function plan(){
   if (!file) return;
-  const size = (+$("#chunk").value) * MB;
+  const size = partSize();
   const n = Math.ceil(file.size / size);
-  $("#plan").textContent = "الحجم الكامل " + human(file.size) + "  ←  " + n + " جزءًا";
+  $("#plan").textContent = "الحجم الكامل " + file.size.toLocaleString("en") + " بايت (" + human(file.size)
+    + ")  ←  " + n + " جزءًا × " + size.toLocaleString("en") + " · سقف GitHub لكل ملف 25,000,000 بايت";
   $("#cut").disabled = n > 60;
-  if (n > 60) $("#plan").textContent += " — أكثر من 60 جزءًا: اختر 24 MB أو أرسل الملف في المحادثة";
+  if (n > 60) $("#plan").textContent += " — أكثر من 60 جزءًا: أرسل الملف في المحادثة";
+  if (size < (+$("#chunk").value) * MB) $("#plan").textContent += "  ← خُفِّض تلقائياً إلى 24,000,000";
 }
 $("#chunk").addEventListener("change", plan);
 
