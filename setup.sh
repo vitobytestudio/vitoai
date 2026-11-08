@@ -115,6 +115,14 @@ else
   # وبه يفشل pip بـ «unable to get local issuer certificate» بينما ينجح بلا شيء — لأن مخزن
   # النظام فيه السلسلة كاملة. (npm وحده يحتاج NODE_EXTRA_CA_CERTS، وقد فُعِّل أعلاه.)
   "$AIVENV/bin/pip" install -q --disable-pip-version-check -r requirements-ai.txt 2>&1 | tail -2
+  # فخٌّ لا يُرى في pip list: mediapipe==0.10.21 يعلن اعتماديته إلى opencv-contrib-python،
+  # فيُثبَّت مع headless ويكتب `cv2` فوق نفسه — وcontrib ينادي libGL.so.1 غير الموجود هنا،
+  # فـ«import cv2» يموت بـImportError رغم أن كل باقة ظاهرة في pip list. الحذف وحده يمحو مجلد
+  # cv2 المشترك، لذا يُعاد تثبيت headless في الحال ولا يُترك نصفاً. (بلا هذا الإصلاح تموت
+  # 4.6/5 على آلةٍ نظيفة بكاملها، والرسالة تقول «0 نموذج» — وهي كذبة لطيفة.)
+  "$AIVENV/bin/pip" uninstall -y -q opencv-contrib-python opencv-python >/dev/null 2>&1 || true
+  "$AIVENV/bin/pip" install -q --disable-pip-version-check --force-reinstall --no-deps \
+      opencv-python-headless==4.10.0.84 >/dev/null 2>&1 || true
   N=$("$AIVENV/bin/python" - <<'PY' 2>/dev/null
 import os, glob, mediapipe as mp
 print(len(glob.glob(os.path.dirname(mp.__file__) + "/modules/*/*.tflite")))
