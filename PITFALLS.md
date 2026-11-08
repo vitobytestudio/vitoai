@@ -377,3 +377,20 @@ pinning:
 
 `GET /contents/<path>?ref=<branch>` returns the git blob SHA-1, which is exactly what `blobSha(bytes)`
 computes in the browser — so "did my bytes arrive?" is one cheap comparison, no download needed.
+
+## Three traps that cost an hour each, so they cost you nothing
+
+- **`cvtColor` Lab has two scales.** For `uint8`, L is 0..255; for `float32`, OpenCV expects BGR in
+  0..1 and returns Lab with L in 0..100. A `np.clip(out, 0, 1)` written for one scale silently destroys
+  the other: my light-match turned the subject black, and only *looking at the output sheet* revealed it.
+  Rule: do the statistics in float, but hand `cvtColor` `uint8` in and out, or stay in float end to end.
+- **`grep -q` inside `set -o pipefail` reports success as failure.** `-q` exits at the first match, the
+  pipe closes, ffmpeg dies of SIGPIPE with 141, and the pipeline's status — with pipefail — is the
+  failure. My install guard therefore aborted a *healthy* toolchain ("this ffmpeg build has no
+  'loudnorm'", with loudnorm right there). Rule: capture the list once into a variable, then grep that.
+  A guard that screams on a good machine is worse than no guard, because it teaches you to disable guards.
+- **Do not export `SSL_CERT_FILE`/`REQUESTS_CA_BUNDLE` to pip here.** `e2b-ca.crt` holds one leaf CA;
+  pointing pip at it yields "unable to get local issuer certificate" and a misleading "from versions:
+  none", while pip with no override succeeds using the system store. npm is the one that needs
+  `NODE_EXTRA_CA_CERTS`. Same box, same proxy, different rule per tool — so test the install command
+  itself, never assume a fix transfers.
