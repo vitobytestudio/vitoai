@@ -26,6 +26,7 @@ import { Naksab02, DURATION as NAKSAB2_DURATION } from "./naksab/Ep02";
 import { Horror01, DURATION as HORROR_DURATION } from "./horror/Scene01";
 import { LastFloor, DURATION as LASTFLOOR_DURATION } from "./lastfloor/Trailer";
 import { Phone, DURATION as PHONE_DURATION } from "./phone/Phone";
+import { PhonePro, PRO_DURATION } from "./phone/PhonePro";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -142,6 +143,8 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="LastFloor" component={LastFloor} durationInFrames={LASTFLOOR_DURATION} fps={30} width={1080} height={1920} />
     {/* المقطع الهاتفي: لقطة حقيقية قصّصناها على صمتٍ مقيس — 30.00s بالضبط */}
     <Composition id="Phone" component={Phone} durationInFrames={PHONE_DURATION} fps={30} width={1080} height={1920} />
+    {/* «المقطع الفخم»: مسرحٌ بلوحةٍ مُصمَّمة، وقناعٌ زمنيّ، وكلماتٌ على نوى القياس — 30.00s */}
+    <Composition id="PhonePro" component={PhonePro} durationInFrames={PRO_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SHOWREEL — 30s, eight movements, the studio's own advertisement */}
     <Composition id="Showreel" component={Showreel} durationInFrames={REEL_DURATION} fps={30} width={1080} height={1920} />
     {/* NEXUS SIGNAL — 36s kinetic 3D film, 30fps */}
