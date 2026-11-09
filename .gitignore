@@ -37,3 +37,8 @@ cookies.txt
 tools/cookies/
 # files the google-drive connector lands here (up to 100MiB each): source, never a deliverable
 google_drive/
+
+# مولَّدٌ بواسطة scripts/score_corp.py في ~4 ثوانٍ: لا يُبرَّرُ حملُ 27MB منه في git
+public/audio/corp/*.wav
+# ماسترُ الشريطِ العريضِ والضيق: التسليمُ في مجلد Drive، لا في المستودع
+deliverables/vito-corp-*.mp4

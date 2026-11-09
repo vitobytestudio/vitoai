@@ -59,7 +59,9 @@ def snap(nuclei, targets):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tl", default="src/phone/timeline.json")
-    ap.add_argument("--phrases", required=True, help="سطرٌ لكلِّ لقطة: عربي|إنجليزي")
+    ap.add_argument("--phrases", required=True, help="سطرٌ لكلِّ لقطةٍ أو جملة: عربي|إنجليزي (الكلمةُ المفتاحية بين نجمتين)")
+    ap.add_argument("--by", choices=["seg", "span"], default="span",
+                    help="سطرٌ لكلِّ كتلةٍ أو لكلِّ جملةٍ مقيسةٍ داخلها — الجملةُ أصدقُ إيقاعاً")
     ap.add_argument("--out", default="src/phone/captions.json")
     ap.add_argument("--pad", type=float, default=0.10, help="أمانٌ بالثانية قبل أوّل نواة")
     a = ap.parse_args()
@@ -68,16 +70,31 @@ def main() -> int:
     fps = float(tl["fps"])
     lines = [ln.strip() for ln in open(a.phrases, encoding="utf-8") if ln.strip() and not ln.startswith("#")]
 
-    caps, out_lines = [], []
+    # عُقدُ المحاذاة: إمّا لكلِّ كتلةٍ (قطعُ المونتاج) أو لكلِّ جملةٍ مقيسةٍ داخل الكتلة.
+    units = []
     for si, seg in enumerate(tl["segments"]):
-        if si >= len(lines):
+        nus_all = [x for x in seg["nuclei"] if seg["cut_a"] - 0.01 <= x <= seg["cut_b"] + 0.01]
+        if a.by == "seg":
+            units.append({"seg": si, "t0": seg["cut_a"], "t1": seg["cut_b"], "n": nus_all})
+        else:
+            for (s0, s1) in seg["speech"]:
+                units.append({"seg": si, "t0": s0, "t1": s1,
+                              "n": [x for x in nus_all if s0 - 0.05 <= x <= s1 + 0.05]})
+    print(f"  محاذاةٌ {a.by}: {len(units)} عقدةٍ على {sum(len(u['n']) for u in units)} نواة")
+
+    caps, out_lines = [], []
+    for ui, u in enumerate(units):
+        if ui >= len(lines):
             break
-        ar, _, en = lines[si].partition("|")
+        seg = tl["segments"][u["seg"]]
+        ar, _, en = lines[ui].partition("|")
+        hot = set(re.findall(r"\*([^*\s]+)\*", ar))
+        ar = ar.replace("*", "")
         words = [w for w in re.split(r"\s+", ar.strip()) if w]
         if not words:
             continue
-        nus = [x for x in seg["nuclei"] if seg["cut_a"] - 0.01 <= x <= seg["cut_b"] + 0.01]
-        t0, t1 = seg["cut_a"] + a.pad, seg["cut_b"] - a.pad
+        nus = u["n"]
+        t0, t1 = u["t0"] + a.pad * 0.4, max(u["t1"] - a.pad * 0.4, u["t0"] + 0.30)
         if len(nus) < len(words):                      # نوىً أقلّ من الكلمات: نملأ بالمسافة المتساوية
             step = (t1 - t0) / max(1, len(words))
             beats = [t0 + i * step for i in range(len(words))]
@@ -89,11 +106,13 @@ def main() -> int:
                 cum.append(s)
             targets = [t0 + (c / s) * (t1 - t0) for c in cum]
             beats = snap(nus, targets)
-        rec = {"seg": si, "ar": ar.strip(), "en": en.strip(), "t0": round(t0, 3), "t1": round(t1, 3),
-               "words": [{"w": w, "f": int(round(t * fps))} for w, t in zip(words, beats)]}
+        rec = {"seg": u["seg"], "unit": ui, "ar": ar.strip(), "en": en.strip(),
+               "t0": round(t0, 3), "t1": round(t1, 3),
+               "words": [{"w": w, "f": int(round(t * fps)), "hot": 1 if w in hot else 0}
+                         for w, t in zip(words, beats)]}
         out_lines.append(rec)
-        print(f"  لقطة {si+1}: {len(words)} كلمة على {len(nus)} نواة · "
-              + " ".join(f"{w['w']}@{w['f']}" for w in rec["words"]))
+        print(f"  {ui+1:2d} [لقطة {u['seg']+1}] {len(words)} كلمة على {len(nus)} نواة · "
+              + " ".join(("*" if w["hot"] else "") + f"{w['w']}@{w['f']}" for w in rec["words"]))
     caps = {"fps": fps, "lead_frames": tl.get("lead_frames", 0), "picture_frames": tl["picture_frames"],
             "card_frames": tl["card_frames"], "lines": out_lines, "source": "measured syllable nuclei"}
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
