@@ -1,0 +1,47 @@
+ڤيتو بايت — مونتاج «أسلوب الشركات» · تقرير التسليم
+=================================================
+الملفّ: ٩٧٫٠ ثانية · ١٠٨٠×١٩٠٠ · ٣٠ إطاراً/ث · h264 High · yuv420p(tv, bt709) · AAC ٤٨kHz ستيريو
+الحالة: الأكوادُ والرسومُ والخطوطُ والقياساتُ كلُّها في المستودع (فرع arena/c36750ba-vitoai · commit 602b661 · مدفوع).
+نسخُ MP4 لم تُرفَع: أُبقِيت عمداً خارج git، ومِسحُ الصندوقِ المؤقّتِ أزالَها. لا تُعادُ الآن؛ السلسلةُ أدناه تُخرِجُها في ~٣٥ دقيقة متى قرّرتَ.
+
+ما قيسَته الآلةُ لا ما قُدِّر
+----------------------------
+- المصدرُ: ١٠٤٫٥s فيها ٨٣٫٦٨s كلامٌ متّصل، وأرضيةُ ضجيجٍ مئويّةٌ مقروءة (p12 من غلاف RMS = −65.1 dBFS).
+- القصُّ: ١٨ قطعاً، كلُّها على صمتٍ مقيسٍ ≤ ٠٫١١s، مع جيبِ نَفَسٍ ٠٫٢٢s عند كلِّ وصلة.
+- المحتوى: ٣١ جملةً من ٣١ باقية · صفرُ حذفٍ لمعنى · صفرُ تكرارٍ (بصمةٌ طيفيةٌ × تماثل ٠٫٩٣).
+- الهواءُ الميت: ١٢٫٥٢s أُذيب؛ و٢٫٤٣s منها صارَ مشهدين رسميينِ كاملين (لا قصَّ على كلام).
+- التأطير: نواةٌ حادّةٌ فائقةُ البيضِ المحورِ rx=518px · حدٌّ ٣١٫٢px عن الوجه · ١٨٧ عيّنةَ وجهٍ في فضاءِ الإخراج · نسبةُ حدّةِ الوسط/الأطراف ١٥٫٢٦–٥١٫٦٦× · تسرّبٌ داخل النواة = ٠٫٠ · انكماشُ الألوان ٠٫٥٥ وإظلامُ الأطراف ٠٫٢٠ (بلا قناعٍ ولا matte، فلا تنكسرُ حين يتحرّك).
+- الترجمة: ٢٤٢ مقطعاً مقيساً (سوابقُ مقطعيةٌ لا تقدير) · ٣١ سطراً · كلمةٌ بكلمة، النشِطُ Cairo 900 والباقي 700، والكلمةِ المفتاحيةِ زرقاءُ بمسحِ underline · تلميعٌ لاتينيٌّ أحاديّ العرض أسفلَها.
+- الصوت: أرضيةٌ معايرةٌ من الملفّ نفْسِه (afftdn عند floor+4dB) · adeclick · معادلان (−2.6dB عند 6.4kHz، +1.4dB عند 2.6kHz) · كسبٌ loudnorm خطّيٌّ مقيس · موسيقى مؤلَّفةٌ محليّاً على ١٨ ثانيةِ القطعِ المقيسة (Am–F–C–G · 92 BPM) · نقرتُا انتقالٍ على المشهدين · سايد‑تشين يخفضُ الفراشَ تحتَ الكلام · لا ضجيجَ خارجيَّ ولا موسيقى محمَّلة.
+- الماسترُ المحقَّق: I = −14.4 LUFS · الذروةُ الحقيقية −2.2 dBTP (تحت −1.0 المكتوبِ على الشاشة) · بطاقتا قياسٍ (صمتٌ مُذاب، وسجلُّ احتفاظِ الجُمل) + بطاقةُ ختامٍ بأربعةِ أرقامٍ مقاسة.
+
+إصلاحانِ كادا يكلّفا الشريطَ كلَّه (موثَّقانِ في الكود)
+-----------------------------------------------------
+1) خطّ cairo-arabic عند الوزنِ 700 لا يغطي الأرقامَ اللاتينية ولا شرطةَ «—»؛ وفي هذا الصندوقِ لا خطَّ نظاميَّ إطلاقاً، فسقوطُ Chromium إلى sans-serif كان يُعلّقُ الصفحةَ عند الإطارِ 588 بالضبطِ بلا رسالةِ خطأ. السلسلةُ صارت تنتهي بـ Space Grotesk.
+2) OffthreadVideo كان يُغلقُ الطلبَ عند إطاراتٍ بعينها؛ الصورةُ تُقرأُ الآن من تتابعِ JPEG (public/inbox/fr · مُستثنى من git) فيطابقُ الإطارُ رقمَه حرفيّاً: f ↦ fr/f(f−start).jpg.
+
+إعادةُ الإنتاج (من مجلّدِ المصادر إلى الماستر)
+----------------------------------------------
+  bash setup.sh --ai && source .toolenv
+  mkdir -p /tmp/corp /tmp/corpwork public/inbox
+  "$AIVENV/bin/python" scripts/prune.py public/inbox/clip1.mp4 public/inbox/clip2.mp4 public/inbox/clip3.mp4 --out /tmp/corp
+  "$AIVENV/bin/python" studio/edge.py                 # /tmp/corp/cut.mp4 → edge.mp4 + edge.json (≈٨د)
+  "$FFMPEG" -v error -y -i /tmp/corp/edge.mp4 -vf "fps=30,scale=1080:1920,setsar=1" \
+     -c:v libx264 -g 15 -keyint_min 15 -sc_threshold 0 -crf 16 -pix_fmt yuv420p \
+     -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv public/inbox/clip.mp4
+  python3 scripts/copy_corp.py --tl /tmp/corp/timeline.json --edge /tmp/corp/edge.json --mix /tmp/corp/mix.json --out /tmp/phrases.txt
+  python3 scripts/align.py --phrases /tmp/phrases.txt --tl /tmp/corp/timeline.json --out src/phone/captions.json
+  python3 scripts/score_corp.py                        # public/audio/corp/{score,score_solo}.wav + marks.json
+  STAGE=audio  bash studio/corp_build.sh
+  STAGE=frames bash studio/corp_build.sh               # تتابعُ JPEG
+  npx remotion render PhoneCorp /tmp/corp/corp_v.mp4 --codec=h264 --crf=18 --concurrency=2 --timeout=180000   # ≈١٢د
+  STAGE=master bash studio/corp_build.sh               # deliverables/vito-corp-1080x1920.mp4 (≈٨د)
+  bash studio/tp_limit.sh                              # يثبّتُ dBTP ≤ −1.0 ويكتبُ mix.json
+  bash studio/wide.sh                                  # 1920×1080 blur-fill بنفسِ الصوت
+  COVER_FRAME=<n> bash -c '…select=eq(n\,$COVER_FRAME)…'   # الغلافُ من شريطِ مُرشَّحين يُرى، لا من صيغةٍ عمياء
+
+مرجعُ الصورِ المرفقة
+-------------------
+- vito-corp-cover.jpg · إطارُ الغلاف (٥١٫٣s) — الصورةُ التي نجت؛ اختيارُ الإطارِ النهائي معلَّقٌ على رأيك.
+- vito-corp-sheet.jpg · ٦٠ لقطةً موزّعةً على الفيلم — فحصُ الإيقاعِ والبؤرةِ والبطاقاتِ في نظرةٍ واحدة.
+- vito-corp-framing-proof.jpg · مصدرٌ مُقابلُ المخرَج مع قياسِ لابلاسٍ للنواةِ والأطراف — إثباتُ «الوجهُ حادٌّ والليونةُ في الحوافِ فقط».
