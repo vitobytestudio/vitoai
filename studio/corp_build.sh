@@ -147,6 +147,13 @@ fi
 #        إطاراتٍ بعينها بلا رسالة. التتابعُ يُلغي طبقةَ الفشلِ كلَّها. (مُستثنى من git)
 PIC_SRC=${PIC_SRC:-$EDIT/edge.mp4}
 if [ "$STAGE" = "frames" ] || [ "$STAGE" = "all" ]; then
+  # لا يُعرَضُ إطارٌ فيه حرفٌ لا يملكُه خطٌّ مضمَّن: تعلّقُ العرضِ عند 588 كان حرفاً لا غير.
+  if [ -x "$W" ]; then
+    "$W" scripts/fontlint.py >/dev/null 2>&1 \
+      || { echo "  ✗ fontlint: رمزٌ على الشاشة بلا وجهٍ يملكُه — راجِعْه قبل العرض:" >&2
+           "$W" scripts/fontlint.py 2>/dev/null | grep "✗" | head -4 >&2; exit 5; }
+    echo "  ✔ fontlint: كلُّ رمزٍ مغطّى بوجهٍ من fontData.ts"
+  fi
   mkdir -p public/inbox/fr
   if [ -s public/inbox/fr/f0000.jpg ] && [ "$(ls public/inbox/fr | wc -l)" = "$PIC_FRAMES" ]; then
     echo "  ✔ public/inbox/fr موجودٌ ومطابقٌ ($(ls public/inbox/fr | wc -l) إطاراً)"

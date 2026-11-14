@@ -2,14 +2,31 @@
 # التثبيت:  bash setup.sh --ai     (ينشئ ~/.render-tools/venv-ai)
 #
 # الإصدارات مثبَّتة لأنها الوحيدة التي اشتغلت معاً في هذا الصندوق، والسبب موثّق:
-#  • mediapipe 1.2.x لا يحمّل نماذج داخل العجلة ويطلبها من ai.google.dev ✗ محجوب؛
+#  • mediapipe 1.2.x لا يحمّل نماذج داخل العجلة ويطلبها من ai.google.dev (مُعطَّل)،
 #    بينما 0.10.21 يضمّ 14 نموذج .tflite في العجلة نفسها — وهو ما يجعل القصّ يعمل بلا شبكة.
-#  • mediapipe 0.10.x يطلب numpy<2، وopencv-python-headless 5.x يطلب numpy>=2 → تعارض.
-#    لذلك opencv مثبت على 4.10.0.84، وهي آخر نسخة ترضى numpy 1.26.
+#  • mediapipe 0.10.x يطلب numpy<2، وopencv-python-headless 5.x يطلب numpy>=2؛
+#    لذلك opencv مثبّتة على 4.10.0.84، وهي آخر نسخة ترضى numpy 1.26.
 #  • لا تُثبّت opencv-contrib مع headless: الاثنان يكتبان في نفس مسار cv2، وإزالة أحدهما
-#    تمحو الآخر («No module named 'cv2'»).
+#    تمحو الآخر («No module named 'cv2'»)، وcontrib ينادي libGL.so.1 غير الموجود هنا.
+#  • لا تعليقات في سطر الحزمة: pip يقرأ ما بعد «#» كتعليقٍ في بعض الحالات ويتركه متطلباً،
+#    فيموت التثبيتُ كلّه بسطرٍ واحد. الأسابُ في أسطرٍ مستقلةٍ أعلى كلِّ طبقة.
 mediapipe==0.10.21
 opencv-python-headless==4.10.0.84
 numpy<2
 scikit-image
 pillow
+
+# الطبقةُ الثانية — قياسُ الصوتِ والصورةِ والخطوط. كلُّها خفيفةٌ ومحليّة:
+#  fonttools + brotli : يفتحان الخطوطَ المضمّنةَ في src/fontData.ts ويقرآن cmap الحقيقي،
+#                       فبابُ scripts/fontlint.py يقولُ أيُّ حرفٍ على الشاشة لا يملكُه وجه.
+#  pyloudnorm         : ITU-R BS.1770-4 في بايثون، فلا تفسيرَ لمخرجاتِ ebur128 بالنصّ.
+#  scenedetect        : حدودُ اللقطاتِ رأسيّاً، لإثباتِ أنّ كلَّ قطعٍ يقعُ خارجَ الجملة.
+#  pysubs2 + reshaper + bidi : مسارُ ترجمةٍ احتياطيّ بـ libass (ffmpeg ass=) لا يعرفُ
+#                               تعلّقَ Chromium، يُثبَّتُ شكلُهُ بمقابلةِ PIL له.
+fonttools
+brotli
+pyloudnorm
+scenedetect
+pysubs2
+arabic-reshaper
+python-bidi

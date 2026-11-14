@@ -104,7 +104,47 @@ def main() -> int:
         for ar, en in out:
             fh.write(f"{ar} | {en}\n")
     print(f"  ✔ {a.out} · {len(out)} سطراً · {n_span} جملةٌ مقيسة")
+    write_spec(a.edge)
     return 0
+
+
+
+def write_spec(edge_path: str, out_dir: str = "src/phone") -> dict:
+    """يكتبُ src/phone/spec.json من قياساتِ تمريرةِ التأطير (edge.json).
+
+    القاعدةُ التي لا تُنكَر: كلُّ رقمٍ يظهرُ على الشاشة مقيسٌ لا مقدَّر. لذا لا تعرفُ
+    المكوّناتُ أيَّ رقمٍ بنفسِها؛ تقرأُ هذا الملفَّ الذي يولِّده edge.py فعلاً.
+    """
+    import json as _json
+    import os as _os
+
+    if not _os.path.exists(edge_path):
+        return {}
+    e = _json.load(open(edge_path, encoding="utf-8"))
+    core = e.get("core_ellipse") or {}
+    sig = e.get("sigma") or [9.0, 30.0]
+    sp = float(e.get("sharp_core") or 0.0)
+    se = float(e.get("sharp_edge") or 0.0)
+    spec = {
+        "faces_sampled": int(e.get("faces") or 0),
+        "core_rx_px": round(float(core.get("rx") or 0.0)),
+        "core_ry_px": round(float(core.get("ry") or 0.0)),
+        "core_margin_px": round(float(e.get("core_face_margin_px") or 0.0), 1),
+        "sigma_pair": "%g/%gpx" % (sig[0], sig[1]),
+        "ratio": ("%.2fx" % (sp / se)) if se else "—",
+        "spill_in_core": round(float(e.get("spill_in_core") or 0.0), 2),
+        "edge_weight_max": round(float(e.get("edge_weight_max") or 0.0), 3),
+        "frames": int(e.get("frames") or 0),
+        "lut": "/".join("%.3g" % v for v in (e.get("lut") or [])),
+        "desat": e.get("desat"),
+        "dark": e.get("dark"),
+    }
+    out = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), out_dir)
+    _os.makedirs(out, exist_ok=True)
+    _json.dump(spec, open(_os.path.join(out, "spec.json"), "w", encoding="utf-8"),
+               ensure_ascii=False, indent=1)
+    print("  spec.json →", " · ".join("%s %s" % (k, v) for k, v in spec.items()[:6]))
+    return spec
 
 
 if __name__ == "__main__":

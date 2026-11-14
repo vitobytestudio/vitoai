@@ -25,6 +25,7 @@ import React from "react";
 import { AbsoluteFill, Easing, Img, interpolate, staticFile, useCurrentFrame } from "remotion";
 import CAPS from "./captions.json";
 import TL from "./timeline.json";
+import SPEC from "./spec.json";
 
 export const FPS = 30;
 const LEAD = TL.lead_frames as number;
@@ -342,14 +343,14 @@ const HUD: React.FC<{ f: number }> = ({ f }) => {
       { label: "SENTENCES", value: `${SPANS}/${SPANS}` },
     ],
     [
-      { label: "FACE SAMPLES", value: "187" },
-      { label: "SHARP CORE", value: "518px", accent: true },
-      { label: "EDGE FALL", value: "3 σ + 0.8" },
+      { label: "FACES SAMPLED", value: `${SPEC.faces_sampled}` },
+      { label: "SHARP CORE", value: `${SPEC.core_rx_px}px`, accent: true },
+      { label: "FALLOFF SIGMA", value: SPEC.sigma_pair },
     ],
     [
-      { label: "NUCLEI", value: `${NUCLEI}` },
-      { label: "WORD LOCK", value: "1:1", accent: true },
-      { label: "GUESS", value: "NONE" },
+      { label: "CORE MARGIN", value: `${SPEC.core_margin_px}px` },
+      { label: "SPILL IN CORE", value: `${SPEC.spill_in_core}`, accent: true },
+      { label: "SHARPNESS", value: SPEC.ratio },
     ],
   ];
   const active = rows[Math.min(2, ch)];

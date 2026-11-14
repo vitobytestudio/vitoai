@@ -439,7 +439,7 @@ const Chrome: React.FC<{ f: number }> = ({ f }) => {
       </div>
       <div style={{ position: "absolute", right: 74, top: 132, textAlign: "right", opacity: inV }}>
         <div style={{ font: `500 23px ${MONO}`, color: `${STEEL}CC`, letterSpacing: "0.22em" , direction: "ltr"}}>{tc}</div>
-        <div style={{ marginTop: 10, font: `500 20px ${MONO}`, color: `${AMBER}D9`, letterSpacing: "0.2em" , direction: "ltr"}}>{speaking(f) ? "● VOICE" : "○ GAP"}</div>
+        <div style={{ marginTop: 10, font: `500 20px ${MONO}`, color: `${AMBER}D9`, letterSpacing: "0.2em" , direction: "ltr"}}>{speaking(f) ? "• VOICE" : "• GAP"}</div>
       </div>
       <AbsoluteFill style={{ background: PAPER, opacity: flash * 0.09, pointerEvents: "none" }} />
     </>
