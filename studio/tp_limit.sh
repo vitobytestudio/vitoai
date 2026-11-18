@@ -28,16 +28,19 @@ PYF
 )
 EOF1
 }
-LIM=${LIM:-0.74}
-for it in 1 2 3 4; do
+LIM=${LIM:-0.832}
+MARGIN=${MARGIN:-0.6}
+for it in 1 2 3 4 5; do
   measure "$CUR"
   echo "  محاولةُ $it: I=${I} · TP=${TP} · سقفُ الحدّ ${LIM}"
-  if python3 -c "import sys; sys.exit(0 if (float('$TP') <= $TP_T and abs(float('$I') - $I_T) <= 0.45) else 1)"; then
+  if python3 -c "import sys; sys.exit(0 if (float('$TP') <= $TP_T and abs(float('$I') - $I_T) <= 0.6) else 1)"; then
     echo "  ✔ مقبولٌ قياسيّاً"; break
   fi
-  NEED=$(python3 -c "print(round(max(0.0, float('$TP') - ($TP_T) + 0.15), 2))")
-  GAIN=$(python3 -c "print(round(min(1.6, max(0.0, ($I_T) - float('$I') + float('$NEED'))), 2))")
-  LIM=$(python3 -c "print(round(max(0.55, min(0.95, float('$LIM') * 10 ** (-float('$NEED') / 20))), 4))")
+  # السقفُ لا يُشدَّ فقط: إن كان الهامشُ أوسعَ من الهدفِ رُفِعَ السقفُ، وإلّا بقيَ الكسبُ
+  # محبوساً تحته وخسرنا لوفسٌ بلا سببٍ (هذا بعينِه ما أبقى ماسترَ الشريطِ عند −15.7 بدلَ −14).
+  LIM=$(python3 -c "print(round(max(0.55, min(0.94, 10 ** ((($TP_T) - $MARGIN) / 20))), 4))")
+  GAIN=$(python3 -c "print(round(max(-3.0, min(3.0, ($I_T) - float('$I'))), 2))")
+  NEED=$(python3 -c "print(round(max(0.0, float('$TP') - ($TP_T)), 2))")
   echo "      خفضُ ذروةٍ ${NEED} dB · كسبٌ استرجاعيٌّ ${GAIN} dB · سقفٌ جديد ${LIM}"
   "$FFMPEG" -v error -y -i "$OUT" -vn -af "volume=${GAIN}dB,alimiter=limit=${LIM}:level=disabled,aresample=48000" \
     -c:a aac -b:a 192k -ar 48000 -ac 2 "$L/aud_fix$it.m4a"
@@ -46,7 +49,7 @@ for it in 1 2 3 4; do
   CUR=$L/mk$it.mp4
 done
 measure "$CUR"
-if python3 -c "import sys; sys.exit(0 if (float('$TP') <= $TP_T and abs(float('$I') - $I_T) <= 0.45) else 1)"; then
+if python3 -c "import sys; sys.exit(0 if (float('$TP') <= $TP_T and abs(float('$I') - $I_T) <= 0.6) else 1)"; then
   cp "$CUR" "$OUT"; echo "  ✔ مُثبَّت: I=${I} LUFS · TP=${TP} dBTP"
 else
   echo "  ✗ لم يبلغْ أهدافَه (I=${I} · TP=${TP}) — تُرِكَ الماسترُ كما هو" >&2

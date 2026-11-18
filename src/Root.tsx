@@ -28,6 +28,7 @@ import { LastFloor, DURATION as LASTFLOOR_DURATION } from "./lastfloor/Trailer";
 import { Phone, DURATION as PHONE_DURATION } from "./phone/Phone";
 import { PhonePro, PRO_DURATION } from "./phone/PhonePro";
 import { PhoneCorp, CORP_DURATION } from "./phone/PhoneCorp";
+import { RivioTease, RIVIO_DURATION } from "./phone/RivioTease";
 import { think } from "./studio/brain";
 
 const AGENT_BRIEF = "مونتاج بريميوم لمجموعة أزياء في مول كبير بباريس";
@@ -150,6 +151,15 @@ export const RemotionRoot: React.FC = () => (
       id="PhoneCorp"
       component={PhoneCorp}
       durationInFrames={CORP_DURATION}
+      fps={30}
+      width={1080}
+      height={1920}
+    />
+    {/* RIVIO — 0:48 proof of style for the launch film: black/blue/violet, narration-driven timing */}
+    <Composition
+      id="RivioTease"
+      component={RivioTease}
+      durationInFrames={RIVIO_DURATION}
       fps={30}
       width={1080}
       height={1920}

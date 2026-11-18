@@ -1,0 +1,93 @@
+{
+ "fps": 30.0,
+ "duration_frames": 1385,
+ "floor_db": -32.93,
+ "speech_blocks": 68,
+ "audio": "vo.wav",
+ "lines": [
+  {
+   "i": 0,
+   "text": "You've built a muscle.",
+   "start_f": 5,
+   "end_f": 35
+  },
+  {
+   "i": 1,
+   "text": "Thumb up. Thumb up. Thumb up.",
+   "start_f": 58,
+   "end_f": 120
+  },
+  {
+   "i": 2,
+   "text": "A reflex, trained by people who bill for it.",
+   "start_f": 136,
+   "end_f": 267
+  },
+  {
+   "i": 3,
+   "text": "And somewhere in the last four hundred scrolls, you forgot what you came here to feel.",
+   "start_f": 273,
+   "end_f": 447
+  },
+  {
+   "i": 4,
+   "text": "This is what happens when a social network stops auctioning your attention, and starts spending it on you.",
+   "start_f": 451,
+   "end_f": 695
+  },
+  {
+   "i": 5,
+   "text": "Rivio.",
+   "start_f": 701,
+   "end_f": 710
+  },
+  {
+   "i": 6,
+   "text": "Black first.",
+   "start_f": 725,
+   "end_f": 734
+  },
+  {
+   "i": 7,
+   "text": "Because a dark surface isn't a theme.",
+   "start_f": 746,
+   "end_f": 802
+  },
+  {
+   "i": 8,
+   "text": "It is a decision: what deserves light, and what is just noise.",
+   "start_f": 821,
+   "end_f": 965
+  },
+  {
+   "i": 9,
+   "text": "Every line, one pixel.",
+   "start_f": 986,
+   "end_f": 1026
+  },
+  {
+   "i": 10,
+   "text": "Every motion, one curve.",
+   "start_f": 1030,
+   "end_f": 1069
+  },
+  {
+   "i": 11,
+   "text": "Two hundred and thirty milliseconds, because anything slower feels laggy, and anything faster feels cheap.",
+   "start_f": 1073,
+   "end_f": 1265
+  },
+  {
+   "i": 12,
+   "text": "Blue means you acted.",
+   "start_f": 1269,
+   "end_f": 1313
+  },
+  {
+   "i": 13,
+   "text": "Violet means it understood.",
+   "start_f": 1317,
+   "end_f": 1370
+  }
+ ]
+}
