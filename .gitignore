@@ -1,0 +1,44 @@
+node_modules/
+.cache/
+.toolenv
+# rendered deliverables stay out of git — the promoted copies live in deliverables/
+out/*.mp4
+out/master_raw.mp4
+# generated from scripts/make_audio.py
+public/audio/*.wav
+
+# guard: a mis-parameterised env var once wrote 209MB of chromium here
+undefined/
+.render-tools/
+studio/dist/
+
+# upload inbox / hand-back folder — big media, never committed
+inbox/
+outbox/
+
+# heavy exports that must never be committed again
+*master*.mp4
+*clean*.mp4
+cdn/*.mp4
+
+# the uploaded clip is a source, never a deliverable
+/public/inbox/
+
+__pycache__/
+*.pyc
+
+# a saved browser session IS a login: never commit it, never let a stray glob pick it up
+storage_state.json
+*.storage_state.json
+cookies.json
+gemini_cookies.json
+*.cookies.txt
+cookies.txt
+tools/cookies/
+# files the google-drive connector lands here (up to 100MiB each): source, never a deliverable
+google_drive/
+
+# مولَّدٌ بواسطة scripts/score_corp.py في ~4 ثوانٍ: لا يُبرَّرُ حملُ 27MB منه في git
+public/audio/corp/*.wav
+# ماسترُ الشريطِ العريضِ والضيق: التسليمُ في مجلد Drive، لا في المستودع
+deliverables/vito-corp-*.mp4

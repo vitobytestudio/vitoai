@@ -1,0 +1,29 @@
+# the name is the address: nexus.vitobytestudio.workers.dev
+name = "nexus"
+main = "studio/worker.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# Everything the studio needs is static. There is no render service, no queue
+# and no database — the film is encoded in the visitor's browser, so a KV-less,
+# D1-less Worker is the whole backend.
+[assets]
+directory = "./studio/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = false
+
+[observability]
+enabled = true
+
+# Workers AI — free tier is 10,000 neurons/day, no card required.
+# Remove this block to run the studio with no AI at all; the deterministic
+# planner in the bundle keeps working and /api/plan returns 501.
+[ai]
+binding = "AI"
+
+[vars]
+PLAN_MODEL = "@cf/meta/llama-3.1-8b-instruct"
+# the key that opens /inbox. It only reads trial feedback; rotate it with
+#   npx wrangler secret put FEEDBACK_KEY
+FEEDBACK_KEY = "nexus-trial"

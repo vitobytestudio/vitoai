@@ -1,0 +1,27 @@
+{
+  "source": "clip.mp4",
+  "durationSec": 8.04,
+  "fps": 24,
+  "mood": {
+    "temperature": "cool",
+    "exposure": "dark",
+    "contrast": 0.665,
+    "saturation": 0.304
+  },
+  "ink": "#06090C",
+  "ink2": "#0D1419",
+  "paper": "#F6F6F7",
+  "accent": "#62A8DA",
+  "accent2": "#DAA681",
+  "ramp": [
+    "#173245",
+    "#2B5E82",
+    "#478FC2",
+    "#94BEDB",
+    "#E0ECF5"
+  ],
+  "rules": {
+    "surface": "paper-on-ink",
+    "accentUse": "accent reads cold: keep it small and rare"
+  }
+}

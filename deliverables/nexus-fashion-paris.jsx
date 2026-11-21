@@ -1,0 +1,144 @@
+// =====================================================================
+//  NEXUS · After Effects project — مونتاج بريميوم لمجموعة أزياء
+//  6 beats · 28s · 1080x1920 · 30fps
+//
+//  How to use: File ▸ Scripts ▸ Run Script File… and pick this file.
+//  It builds a finished composition in the open project. Nothing is
+//  fetched, nothing is installed, and Undo reverses all of it.
+//
+//  Arabic text: the layers inherit your default font. Set it once in
+//  Edit ▸ Preferences ▸ Type, or select all text layers and pick a face
+//  with Arabic glyphs (Cairo, IBM Plex Sans Arabic, Tajawal).
+// =====================================================================
+
+(function nexusBuild() {
+  var D = {"title":"مونتاج بريميوم لمجموعة أزياء","accent":[0.23137254901960785,0.9411764705882353,0.6588235294117647],"total":28,"beats":[{"i":0,"kind":"hook","start":0,"seconds":4.5,"end":4.5,"head":"مصمَّمة\rلطريقتك في الحركة.","line":"مصمَّمة لطريقتك في الحركة.","world":""},{"i":1,"kind":"place","start":4.5,"seconds":5.6,"end":10.1,"head":"القطع","line":"القطع — مجموعة تُصوَّر حيث تنتمي.","world":"showroom"},{"i":2,"kind":"place","start":10.1,"seconds":5,"end":15.1,"head":"في الضوء","line":"في الضوء — مجموعة تُصوَّر حيث تنتمي.","world":"mall"},{"i":3,"kind":"evidence","start":15.1,"seconds":4.5,"end":19.6,"head":"تُلبس لتُرى","line":"تُلبس لتُرى. مجموعة تُصوَّر حيث تنتمي.","world":"haussmann"},{"i":4,"kind":"number","start":19.6,"seconds":3.9,"end":23.5,"head":"","line":"أرقام يمكن التحقق منها.","world":""},{"i":5,"kind":"end","start":23.5,"seconds":4.5,"end":28,"head":"","line":"فيتو بايت.","world":""}],"brand":"NEXUS","lang":"ar"};
+  var W = 1080, H = 1920, FPS = 30;
+
+  if (!app.project) app.newProject();
+  app.beginUndoGroup("NEXUS — " + D.title);
+
+  // A scalar property takes a one-element ease array; a 2D or 3D property takes
+  // two or three. Passing the wrong length throws and kills the build, so the
+  // dimension is read from the property itself.
+  function ease(prop, influence) {
+    var i, k, n = prop.numKeys, inf = influence || 88, dims, arr;
+    dims = (prop.value instanceof Array) ? prop.value.length : 1;
+    for (i = 1; i <= n; i++) {
+      prop.setInterpolationTypeAtKey(i, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+      arr = [];
+      for (k = 0; k < dims; k++) arr.push(new KeyframeEase(0, inf));
+      prop.setTemporalEaseAtKey(i, arr, arr);
+    }
+  }
+
+  function solid(comp, name, color, w, h, x, y) {
+    var s = comp.layers.addSolid(color, name, w || W, h || H, 1);
+    s.property("Transform").property("Position").setValue([x === undefined ? W / 2 : x, y === undefined ? H / 2 : y]);
+    return s;
+  }
+
+  function text(comp, str, size, color, x, y, tracking) {
+    var t = comp.layers.addText(str);
+    var td = t.property("Source Text").value;
+    td.fontSize = size;
+    td.fillColor = color;
+    td.applyFill = true;
+    td.applyStroke = false;
+    td.justification = ParagraphJustification.CENTER_JUSTIFY;
+    td.tracking = tracking || 0;
+    t.property("Source Text").setValue(td);
+    t.property("Transform").property("Position").setValue([x === undefined ? W / 2 : x, y === undefined ? H / 2 : y]);
+    t.motionBlur = true;
+    return t;
+  }
+
+  function fade(layer, a, b, c, e) {
+    var op = layer.property("Transform").property("Opacity");
+    op.setValueAtTime(a, 0);
+    op.setValueAtTime(b, 100);
+    if (c !== undefined) op.setValueAtTime(c, 100);
+    if (e !== undefined) op.setValueAtTime(e, 0);
+    ease(op);
+  }
+
+  function rise(layer, a, b, from, to) {
+    var p = layer.property("Transform").property("Position");
+    p.setValueAtTime(a, from);
+    p.setValueAtTime(b, to);
+    ease(p);
+  }
+
+  var comp = app.project.items.addComp("NEXUS — " + D.title, W, H, 1, D.total, FPS);
+  comp.motionBlur = true;
+  comp.workAreaDuration = D.total;
+
+  // --- ground ---------------------------------------------------------
+  var bg = solid(comp, "ground", [0.02, 0.031, 0.047]);
+  bg.locked = false;
+
+  // --- the camera does the breathing, so no layer has to -------------
+  var cam = comp.layers.addCamera("camera", [W / 2, H / 2]);
+  var zoom = cam.property("Camera Options").property("Zoom");
+  zoom.setValueAtTime(0, 1500);
+  zoom.setValueAtTime(D.total, 1380);
+  ease(zoom);
+
+  var beat = D.beats, b, i, start, end;
+
+  for (i = 0; i < beat.length; i++) {
+    b = beat[i];
+    start = b.start;
+    end = b.end;
+
+    // an accent rule that draws itself across the frame
+    var rule = solid(comp, "rule " + (i + 1), D.accent, 840, 3, W / 2, H * 0.62);
+    rule.property("Transform").property("Scale").setValue([0, 100]);
+    var sc = rule.property("Transform").property("Scale");
+    sc.setValueAtTime(start + 0.1, [0, 100]);
+    sc.setValueAtTime(start + 0.7, [100, 100]);
+    ease(sc);
+    fade(rule, start, start + 0.2, end - 0.3, end);
+
+    if (b.head) {
+      var h = text(comp, b.head, b.kind === "hook" ? 118 : 78, [0.94, 0.96, 1], W / 2, H * 0.52, b.kind === "hook" ? -40 : -20);
+      fade(h, start + 0.05, start + 0.5, end - 0.35, end);
+      rise(h, start + 0.05, start + 0.7, [W / 2, H * 0.52 + 70], [W / 2, H * 0.52]);
+    }
+
+    if (b.line) {
+      var l = text(comp, b.line, 34, [0.55, 0.63, 0.72], W / 2, H * 0.68, 0);
+      fade(l, start + 0.25, start + 0.8, end - 0.3, end);
+    }
+
+    // a marker per beat, so the timeline reads like a shot list
+    var mk = new MarkerValue(b.kind + (b.world ? " · " + b.world : ""));
+    comp.markerProperty.setValueAtTime(start, mk);
+  }
+
+  // --- the signature ------------------------------------------------
+  var last = comp.layers.addText(D.brand);
+  var ltd = last.property("Source Text").value;
+  ltd.fontSize = 64;
+  ltd.fillColor = [0.94, 0.96, 1];
+  ltd.justification = ParagraphJustification.CENTER_JUSTIFY;
+  ltd.tracking = 260;
+  last.property("Source Text").setValue(ltd);
+  last.property("Transform").property("Position").setValue([W / 2, H * 0.46]);
+  fade(last, D.total - 1.4, D.total - 0.7, D.total, D.total);
+
+  // --- grade --------------------------------------------------------
+  // A mask drawn by moving Shape vertices is not portable ExtendScript, and an
+  // effect by matchName depends on which plug-ins the workstation owns. So the
+  // grade is the one thing that always exists: a uniform dim over the film,
+  // which the colourist replaces with curves in one click.
+  var dim = solid(comp, "grade · dim 12%", [0, 0, 0]);
+  dim.adjustmentLayer = false;
+  dim.property("Transform").property("Opacity").setValueAtTime(0, 12);
+  dim.moveToBeginning();
+  dim.locked = true;
+
+  comp.openInViewer();
+  app.endUndoGroup();
+  alert("NEXUS · " + D.title + "\n" + beat.length + " beats · " + D.total + "s · built.");
+})();

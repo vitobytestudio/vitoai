@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>رفع الفيديو الخام إلى VitoAI — الجزء الآمن</title>
+<style>
+  :root{ --bg:#0b0d12; --panel:#12161e; --line:#1e2532; --ink:#f4f5f7; --dim:#8b97ab;
+         --amber:#e8b14a; --ok:#5fd08a; --bad:#ff6b6b; --run:#6aa9ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:16px/1.7 "IBM Plex Sans Arabic","Tajawal","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:52px 20px 90px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-size:28px;margin:0;letter-spacing:-.4px}
+  .tag{font-size:12px;color:var(--amber);border:1px solid var(--amber);border-radius:999px;padding:3px 10px}
+  p.lead{color:var(--dim);margin:0 0 28px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px 21px;margin:15px 0}
+  .step h2{margin:0 0 4px;font-size:16.5px}
+  .sub{color:var(--dim);font-size:13.5px;margin:0 0 15px}
+  label{display:block;font-size:12.5px;color:var(--dim);margin:0 0 6px}
+  input[type=file]{display:none}
+  .pick{display:flex;cursor:pointer;border:1px dashed #2b3446;border-radius:11px;padding:15px 18px;
+         justify-content:center;background:#0e1219;color:var(--ink);transition:.16s}
+  .pick:hover{border-color:var(--amber);background:#111823}
+  input[type=password],input[type=text],select{width:100%;font:inherit;color:var(--ink);background:#0e1219;
+         border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  input.mono{font-family:ui-monospace,Menlo,monospace;direction:ltr;text-align:left}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;color:var(--ink);background:#0e1219;border:1px solid var(--line);border-radius:10px;
+         padding:11px 16px;cursor:pointer}
+  button.go{background:var(--amber);color:#14100a;border:0;font-weight:600}
+  button.go[disabled]{opacity:.35;cursor:not-allowed}
+  a{color:var(--amber)}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-top:13px}
+  .fact{background:#0e1219;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+  .fact b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+  .fact span{font-size:11px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+  th,td{text-align:right;padding:7px 5px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th{color:var(--dim);font-weight:500;font-size:11.5px}
+  .st{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+  .st.wait{color:var(--dim)} .st.run{color:var(--run);border-color:var(--run)}
+  .st.done{color:var(--ok);border-color:var(--ok)} .st.skip{color:var(--amber);border-color:var(--amber)}
+  .st.err{color:var(--bad);border-color:var(--bad)}
+  code,.mono{font-family:ui-monospace,Menlo,monospace;direction:ltr;unicode-bidi:plaintext;font-size:12.5px}
+  .bar{height:5px;background:#080a0e;border-radius:9px;overflow:hidden;margin:14px 0 4px;display:none}
+  .bar i{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+  #status{font-size:13.5px;margin-top:9px;min-height:20px}
+  #status.bad{color:var(--bad)} #status.ok{color:var(--ok)}
+  .fine{font-size:12.5px;color:var(--dim);border-right:2px solid var(--line);padding-right:12px;margin-top:12px}
+  .copy{font-size:12.5px;background:#0e1219;border:1px solid var(--line);border-radius:9px;padding:9px 11px;
+         width:100%;text-align:right;color:var(--ink);cursor:pointer}
+  ul.tok{margin:8px 0 0;padding-inline-start:20px;font-size:13px;color:var(--dim)}
+  ul.tok li{margin:3px 0}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>ارفع الفيديو كاملًا — الصفحة تقطّعه وتُثبِته جزءًا جزءًا</h1>
+  <span class="tag">لا سقف 25 MB · لا 15 رفعة · لا إعادة ترميز</span>
+</header>
+<p class="lead">
+  صفحة الرفع في GitHub ترفض ما فوق 25 ميغابايت، وأنت تملك ملفًا بمئات الميغابايت. هذه الصفحة لا تمرّ
+  بتلك الواجهة: تفتح <b>واجهة GitHub البرمجية مباشرة</b> من متصفحك، فتقطع ملفك أجزاء 24 ميغابايت
+  وتدفعها واحدًا واحدًا إلى فرع المونتاج، ثم <b>تقرأ كل جزء وترجع ببصمته</b> لتثبت أنه وصل حرفيًا.
+  لا سيرفر وسيط، ولا رفع يدوي متكرر، ولا مساس ببايتاتك.
+</p>
+
+<div class="step">
+  <h2>١ · الملف</h2>
+  <p class="sub">mp4 / mov / mkv … أي مدة وأي حجم — لن يُعاد ترميزه ولا يقرأه سواك.</p>
+  <label class="pick" for="f"><span id="pickText">اختر الفيديو</span></label>
+  <input type="file" id="f" accept="video/*,.mp4,.mov,.m4v,.mkv,.webm,.avi">
+  <div class="facts hidden" id="facts">
+    <div class="fact"><b id="mName" class="mono">—</b><span>الاسم</span></div>
+    <div class="fact"><b id="mSize">—</b><span>الحجم</span></div>
+    <div class="fact"><b id="mParts">—</b><span>عدد الأجزاء</span></div>
+    <div class="fact"><b id="mTime">—</b><span>المدة</span></div>
+    <div class="fact"><b id="mRes">—</b><span>الأبعاد</span></div>
+  </div>
+</div>
+
+<div class="step">
+  <h2>٢ · مفتوح يخوّل الكتابة في المستودع فقط</h2>
+  <p class="sub">
+    اذهب إلى <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">
+    Settings → Fine-grained tokens → Generate new token</a> واضبط ثلاثة أشياء لا غير:
+  </p>
+  <ul class="tok">
+    <li><b>Repository access:</b> Only select repositories → <code>vitobytestudio/vitoai</code></li>
+    <li><b>Contents:</b> Read and write — لا تمنح صلاحيات أخرى</li>
+    <li><b>Expiration:</b> 7 days (أو أقل) — ثم احذفه بعد التسليم</li>
+  </ul>
+  <div style="margin-top:13px">
+    <label for="tok">الصق Token هنا (يُستخدم في هذه الجلسة فقط: لا يُحفظ ولا يُرسل لغير api.github.com)</label>
+    <input type="password" id="tok" class="mono" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
+  </div>
+  <div class="row" style="margin-top:11px">
+    <button id="showTok" type="button">أظهره</button>
+    <button id="testTok" type="button">اختبار الصلاحية</button>
+    <span id="tokMsg" style="font-size:12.5px;color:var(--dim)"></span>
+  </div>
+</div>
+
+<div class="step">
+  <h2>٣ · الحجم والوجهة</h2>
+  <div class="row">
+    <div style="flex:1;min-width:150px">
+      <label>حجم الجزء</label>
+      <select id="chunk">
+        <option value="8">8 MB — اتصال ضعيف</option>
+        <option value="16">16 MB — أمان إضافي</option>
+        <option value="24" selected>24 MB — الأقصى المقبول (مقيَس)</option>
+      </select>
+    </div>
+    <div style="flex:2;min-width:200px">
+      <label>الوجهة</label>
+      <input type="text" id="dest" class="mono" value="vitobytestudio/vitoai · arena/c36750ba-vitoai · inbox/" readonly>
+    </div>
+  </div>
+  <p class="fine">٢٤ ميغابايت ليس اختيارًا ذوقياً: قِستُ الواجهة عند 90 و64 و48 ميغابايت فرفضتها
+     («the file is too large to be processed» / مهلة)، وقبلت 24. لهذا الحجم تُبنى الخطة.</p>
+</div>
+
+<div class="step">
+  <h2>٤ · ابدأ</h2>
+  <p class="sub">يُرفع جزء، فيُقرأ، فتُقارَن بصمته، فالآخر. وإن انقطع الاتصال أعدت الصفحة فيُكمل من حيث توقف.</p>
+  <div class="row">
+    <button class="go" id="start" disabled>ابدأ الرفع والتحقّق</button>
+    <button id="stop" disabled>أوقف</button>
+  </div>
+  <div class="bar" id="bar"><i></i></div>
+  <div id="status"></div>
+  <table class="hidden" id="tbl"><thead><tr><th>#</th><th>الجزء</th><th>الحجم</th><th>sha256</th><th>الحالة</th></tr></thead><tbody></tbody></table>
+</div>
+
+<div class="step hidden" id="done">
+  <h2>٥ · تم — قل لي</h2>
+  <p class="sub">اكتب في المحادثة «تم» مع هذا السطر، فأسحب الأجزاء وألمّها وأقيسها قبل أي قصّ.</p>
+  <button class="copy" id="copyLine">انسخ سطر الإخبار</button>
+  <p class="fine" id="doneNote"></p>
+</div>
+
+<footer style="color:#5c6678;font-size:12.5px;margin-top:26px;text-align:center">
+  ملف واحد بلا مكتبات · كل طلباته إلى <code>api.github.com</code> وحده · افتح أدوات المطوّر → الشبكة لترى ذلك بنفسك
+</footer>
+</div>
+
+<script>
+"use strict";
+const API = "https://api.github.com";
+const OWNER = "vitobytestudio", REPO = "vitoai", BRANCH = "arena/c36750ba-vitoai", DIR = "inbox";
+const $ = (s) => document.querySelector(s);
+const MB = 1024 * 1024;
+let file = null, running = false, stop = false, plan = [];
+
+// [[PURE-START]] — دوال نقية بلا DOM؛ تُختبر في node كما هي (انظر inbox/README.md)
+const human = (n) => n >= 1024 * MB ? (n / (1024 * MB)).toFixed(2) + " GB" : (n / MB).toFixed(1) + " MB";
+const stem = (n) => n.replace(/\.[^.]+$/, "").replace(/[^\w.\-]+/g, "_").slice(0, 48) || "video";
+const ext = (n) => { const m = n.match(/(\.[A-Za-z0-9]{2,4})$/); return m ? m[1].toLowerCase() : ".mp4"; };
+const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function sha256(buf){ return hex(await crypto.subtle.digest("SHA-256", buf)); }
+// بصمة كائن git (sha1 لـ "blob <size>\0"+bytes) — تكفي لتخطّي الجزء المكرر دون تنزيله
+async function blobSha(bytes){
+  const pre = new TextEncoder().encode("blob " + bytes.length + "\0");
+  const j = new Uint8Array(pre.length + bytes.length); j.set(pre); j.set(bytes, pre.length);
+  return hex(await crypto.subtle.digest("SHA-1", j));
+}
+// base64 على دفعات: تمرير 24 MB إلى fromCharCode دفعة واحدة ينفجر
+function b64(u8){
+  let s = "", CH = 0x8000;
+  for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+  return btoa(s);
+}
+// [[PURE-END]]
+
+function tok(){ return $("#tok").value.trim(); }
+
+async function gh(path, opts = {}) {
+  const r = await fetch(API + path, {
+    method: opts.method || "GET",
+    headers: Object.assign({
+      "Authorization": "Bearer " + tok(),
+      "Accept": opts.accept || "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+    }, opts.headers || {}),
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if (r.status === 204) return null;
+  const txt = await r.text();
+  if (!r.ok) {
+    let m = txt; try { m = JSON.parse(txt).message || txt; } catch (_) {}
+    const hint = r.status === 401 ? " — المفتاح غير صالح أو منتهي"
+      : r.status === 403 ? " — الصلاحية ناقصة (تحتاج Contents: Read and write) أو نسبة الطلبات"
+      : r.status === 404 ? " — الفرع أو المسار غير موجود" : "";
+    throw new Error("HTTP " + r.status + ": " + m + hint);
+  }
+  return opts.accept ? txt : JSON.parse(txt || "null");
+}
+
+$("#f").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  file = f; plan = [];
+  $("#pickText").textContent = "ملف آخر؟";
+  $("#facts").classList.remove("hidden");
+  $("#mName").textContent = f.name;
+  $("#mSize").textContent = human(f.size);
+  $("#mParts").textContent = "…"; $("#mTime").textContent = "…";
+  recount();
+  try {
+    const v = document.createElement("video"); v.preload = "metadata"; v.muted = true;
+    const url = URL.createObjectURL(f);
+    await new Promise((res) => { v.onloadedmetadata = res; v.onerror = res; setTimeout(res, 4000); v.src = url; });
+    if (isFinite(v.duration) && v.duration > 0) $("#mTime").textContent = v.duration.toFixed(0) + " ث";
+    if (v.videoWidth) $("#mRes").textContent = v.videoWidth + "×" + v.videoHeight;
+    URL.revokeObjectURL(url);
+  } catch (_) {}
+  ready();
+});
+$("#chunk").addEventListener("change", () => { recount(); ready(); });
+function recount(){
+  if (!file) return;
+  const n = Math.ceil(file.size / (+$("#chunk").value * MB));
+  $("#mParts").textContent = n + " جزءًا";
+}
+function ready(){ $("#start").disabled = !(file && tok().length > 20); }
+$("#tok").addEventListener("input", ready);
+
+$("#showTok").addEventListener("click", () => {
+  const i = $("#tok"); i.type = i.type === "password" ? "text" : "password";
+  $("#showTok").textContent = i.type === "password" ? "أظهره" : "أخفِه";
+});
+$("#testTok").addEventListener("click", async () => {
+  const m = $("#tokMsg"); m.style.color = "var(--dim)"; m.textContent = "…";
+  try {
+    const b = await gh("/repos/" + OWNER + "/" + REPO + "/branches/" + BRANCH);
+    m.textContent = "✓ الفرع " + BRANCH + " مقروء، والكتابة ستُقاس فعليًا بأول جزء.";
+    m.style.color = "var(--ok)";
+  } catch (e) { m.textContent = "✗ " + e.message; m.style.color = "var(--bad)"; }
+});
+
+function row(i, name, size){
+  const tr = document.createElement("tr");
+  tr.innerHTML = "<td>" + (i + 1) + "</td><td class='mono'></td><td>" + (size / MB).toFixed(1) +
+    " MB</td><td class='mono'>—</td><td><span class='st wait'>بانتظار</span></td>";
+  tr.children[1].textContent = name;
+  $("#tbl").tBodies[0].appendChild(tr); return tr;
+}
+function setState(tr, cls, text){
+  const s = tr.querySelector(".st"); s.className = "st " + cls; s.textContent = text;
+}
+
+$("#start").addEventListener("click", async () => {
+  if (!file || running) return;
+  running = true; stop = false;
+  $("#start").disabled = true; $("#stop").disabled = false;
+  $("#tbl").classList.remove("hidden"); $("#tbl").tBodies[0].innerHTML = "";
+  $("#bar").style.display = "block"; $("#bar").firstChild.style.width = "0%";
+  const status = $("#status"); status.className = "";
+  const size = (+$("#chunk").value) * MB;
+  const n = Math.ceil(file.size / size);
+  const pre = stem(file.name), e = ext(file.name), manifest = [];
+  const t0 = performance.now();
+  try {
+    for (let i = 0; i < n; i++) {
+      if (stop) throw Object.assign(new Error("أوقفتَ الرفع — أعد البدء فيُكمل من مكانه."), {stopped:true});
+      const name = pre + "." + String(i + 1).padStart(4, "0") + ".part" + e;
+      const blob = file.slice(i * size, Math.min((i + 1) * size, file.size));
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const tr = row(i, name, bytes.length);
+      const sha = await sha256(bytes), bs = await blobSha(bytes);
+      tr.children[3].textContent = sha.slice(0, 12) + "…";
+      setState(tr, "run", "فحص…");
+      let cur = null;
+      try { cur = await gh("/repos/" + OWNER + "/" + REPO + "/contents/" + DIR + "/" + encodeURIComponent(name) + "?ref=" + BRANCH); }
+      catch (err) { if (!/HTTP 404/.test(err.message)) throw err; }
+      if (cur && cur.sha === bs) {
+        setState(tr, "skip", "مطابق — تخطّي");
+        manifest.push([name, bytes.length, sha, bs, "skipped"]); continue;
+      }
+      setState(tr, "run", "رفع " + (i + 1) + "/" + n + "…");
+      await gh("/repos/" + OWNER + "/" + REPO + "/contents/" + DIR + "/" + encodeURIComponent(name), {
+        method: "PUT",
+        body: {
+          message: "inbox: " + name + " (" + bytes.length + " bytes, sha256 " + sha + ")",
+          content: b64(bytes), branch: BRANCH,
+          ...(cur ? { sha: cur.sha } : {}),
+        },
+      });
+      setState(tr, "run", "قراءة للتثبّت…");
+      const back = await gh("/repos/" + OWNER + "/" + REPO + "/contents/" + DIR + "/" + encodeURIComponent(name) + "?ref=" + BRANCH);
+      if (!back || back.sha !== bs) throw new Error("الجزء " + (i + 1) + " رجع ببصمة مختلفة — لا أثق بما لم أتحقق منه");
+      setState(tr, "done", "✓ مطابق");
+      manifest.push([name, bytes.length, sha, bs, "uploaded"]);
+      $("#bar").firstChild.style.width = Math.round(((i + 1) / n) * 100) + "%";
+      await sleep(60);
+    }
+    const man =
+      "# VitoAI inbox manifest\n# origin\t" + file.name + "\n# bytes\t" + file.size +
+      "\n# parts\t" + n + "\n# partsize\t" + size + "\n# made\t" + new Date().toISOString() + "\n" +
+      manifest.map(m => "part\t" + m[0] + "\t" + m[1] + "\t" + m[2] + "\t" + m[3] + "\t" + m[4]).join("\n") + "\n";
+    const mbytes = new TextEncoder().encode(man);
+    const mname = pre + ".MANIFEST.txt";
+    const cur = await gh("/repos/" + OWNER + "/" + REPO + "/contents/" + DIR + "/" + mname + "?ref=" + BRANCH).catch(() => null);
+    await gh("/repos/" + OWNER + "/" + REPO + "/contents/" + DIR + "/" + mname, {
+      method: "PUT",
+      body: { message: "inbox: manifest — " + n + " parts of " + pre + " (" + file.size + " bytes)",
+              content: b64(mbytes), branch: BRANCH, ...(cur ? { sha: cur.sha } : {}) },
+    });
+    const secs = ((performance.now() - t0) / 1000).toFixed(0);
+    status.className = "ok";
+    status.textContent = "✓ كل الأجزاء " + n + " رُفعت وتُحقتّ من بصمتها في " + secs + " ثانية، والقائمة أيضًا وصلت.";
+    $("#done").classList.remove("hidden");
+    $("#doneNote").textContent = "السطر الذي تُخبرني به يضم اسم الأصل وعدد الأجزاء، فأتحقق من كل رقم "
+      + "قبل أن ألمّه: " + n + " جزءًا من " + human(file.size) + ".";
+    $("#copyLine").dataset.line = "تم رفع " + n + " جزءًا — الأصل: " + file.name + " (" + human(file.size) + ") · " + mname;
+  } catch (err) {
+    status.className = "bad";
+    status.textContent = "✗ " + err.message + (err.message.includes("403") ? "" : " — لا شيء ضائع: الأجزاء المرفوعة صحيحة، وأعد المحا فتكمل.");
+    const tr = $("#tbl").tBodies[0].lastElementChild; if (tr) setState(tr, "err", "✗ " + err.message.slice(0, 30));
+  } finally {
+    running = false; $("#start").disabled = false; $("#stop").disabled = true;
+  }
+});
+$("#stop").addEventListener("click", () => { stop = true; });
+$("#copyLine").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("#copyLine").dataset.line || ""); $("#copyLine").textContent = "نُسخ ✓"; }
+  catch (_) { $("#copyLine").textContent = "انسخه يدويًا"; }
+});
+</script>
+</body>
+</html>

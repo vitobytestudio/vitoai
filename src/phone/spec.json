@@ -1,0 +1,14 @@
+{
+ "faces_sampled": 187,
+ "core_rx_px": 518,
+ "core_ry_px": 883,
+ "core_margin_px": 31.2,
+ "sigma_pair": "9/30px",
+ "ratio": "15.26-51.66x",
+ "spill_in_core": 0.0,
+ "edge_weight_max": 0.878,
+ "frames": 2800,
+ "lut": "0.075/0.92/0.05",
+ "desat": 0.55,
+ "dark": 0.2
+}

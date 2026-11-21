@@ -1,0 +1,32 @@
+# فيلمُ 93.3s · 31 جملةً مقيسة · مصدرُ الأرقام: edge.json/timeline.json
+نبدأُ من *صوتِه*، لا من ذوقِنا | START FROM THE VOICE
+أرضيةُ الضجيج *مئويّةٌ* مقروءة | NOISE FLOOR, MEASURED
+نقيسُ الصمتَ كلَّه قبلَ أن *نقصّ* | WE MEASURE SILENCE FIRST
+ثم *نُذيبُه* ولا نحذفُ جملة | WE MELT IT, NOT THE MEANING
+كلُّ جُمَلِه *باقية*: 31 من 31 | EVERY SENTENCE KEPT
+صفرُ ثوانٍ *ميتة* | ZERO DEAD AIR
+الآن *الصورة* | NOW THE PICTURE
+نواةٌ حادّةٌ *محميّة* بالهندسة | A GEOMETRIC SHARP CORE
+187 عيّنةً لوجهه، واتّحادٌ واحد | 187 FACE SAMPLES, ONE UNION
+هامشٌ *31.2* بكسلاً بينه وبين البؤرة | 31.2 PX BEFORE FALLOFF
+تسعةَ عشرَ بالمائة *قطعةٌ* فائقة | A SUPERELLIPSE, NOT A MASK
+البؤرةُ *تسقطُ* على الأطراف | FOCUS FALLS ON THE EDGES
+ولا *تلمسُ* الوجه | NEVER THE FACE
+صفرُ *تسرّب* — بالقياس | ZERO SPILL, PROVEN
+حدّةُ الوسط *15.26* أضعافَ الحافة | 15.26× CENTER OVER EDGE
+لونُ الخشبِ *مُحايد* | THE WOOD, NEUTRALISED
+تدرّجٌ *محايدٌ* معاصر | MODERN NEUTRAL GRADE
+بلا فلترٍ *صاخب* | NO LOUD FILTER
+الكلمةُ حيث *قيلت* | WORDS LAND WHERE SAID
+242 نواةً قياسيةً للنطق | 242 MEASURED SYLLABLE NUCLEI
+رسومٌ *تُوضِّح*، لا تُزيِّن | GRAPHICS THAT EXPLAIN
+شبكةٌ ومِسطرةٌ *وبيان* | NETWORK · RULER · DATA
+مشهدٌ كاملٌ بدلَ *الهواءِ* الميت | A SCENE WHERE AIR WAS DEAD
+ولوحاتُ *البيانات* من ملفّه | SLATES DRAWN FROM HIS FILE
+صوتٌ *مؤلَّفٌ* هنا | SCORE COMPOSED HERE
+ماسترٌ مضبوطٌ على *-14* لوفس | MASTERED TO -14 LUFS
+وذروةٌ حقيقيةٌ تحت *-1.0* ديسيبل | TRUE PEAK UNDER -1.0 dBTP
+مونتاجٌ يُقرأ *إطاراً* إطاراً | EDITED FRAME BY FRAME
+ويُصدَّقُ *بالقياس* | AND PROVEN BY MEASUREMENT
+من فكرةٍ إلى *نشر* | IDEA TO PUBLISH
+استوديو *VITO BYTE* | VITO BYTE STUDIO
